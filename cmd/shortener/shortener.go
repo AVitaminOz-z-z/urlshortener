@@ -12,23 +12,23 @@ import (
 	"syscall"
 )
 
-var srvAddr, baseAddr string
+var srvAddr, baseAddr *string
 
 func parseArgs(aEnv *config.AppEnv) {
 	// parse cmd args
 	flag.CommandLine.SetOutput(os.Stdout)
-	srvAddr = *flag.String("a", aEnv.SrvAddr, "[-a\t| --a]\t->\tserver:port")
-	baseAddr = *flag.String("b", aEnv.BaseAddr, "[-b\t| --b]\t->\thttp(s)://server:port")
+	srvAddr = flag.String("a", aEnv.SrvAddr, "[-a\t| --a]\t->\tserver:port")
+	baseAddr = flag.String("b", aEnv.BaseAddr, "[-b\t| --b]\t->\thttp(s)://server:port")
 	if len(os.Args[1:]) > 0 {
 		flag.Parse()
 	}
 
-	if srvAddr != "" {
-		aEnv.SrvAddr = srvAddr
+	if *srvAddr != "" {
+		aEnv.SrvAddr = *srvAddr
 	}
 
-	if baseAddr != "" {
-		aEnv.BaseAddr = baseAddr
+	if *baseAddr != "" {
+		aEnv.BaseAddr = *baseAddr
 	}
 }
 
