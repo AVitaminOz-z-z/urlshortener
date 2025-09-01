@@ -55,7 +55,6 @@ func ManagePOST(urlStorage *storage.URLStorage) http.HandlerFunc {
 		// finding and send short url
 		//WriteShortURL(r.Host+"/"+urlStorage.ReturnShortURL(string(body)), w)
 		writeShortURL(urlStorage.BaseAddr+"/"+urlStorage.ReturnShortURL(string(body)), w)
-		return
 	}
 }
 
@@ -74,6 +73,5 @@ func ManageGET(urlStorage *storage.URLStorage) http.HandlerFunc {
 			return
 		}
 		writeFullURL(fullURL, w)
-		return
 	}
 }

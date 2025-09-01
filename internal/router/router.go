@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func NewUrlRouter(urlStorage *storage.URLStorage) chi.Router {
+func NewURLRouter(urlStorage *storage.URLStorage) chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.Recoverer)
 	r.Get("/{id}", handler.ManageGET(urlStorage))

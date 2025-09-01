@@ -55,7 +55,7 @@ func main() {
 	urlStorage.SetBaseAddr(appEnv.BaseAddr)
 
 	// creating router
-	R := router.NewUrlRouter(urlStorage)
+	R := router.NewURLRouter(urlStorage)
 
 	// notify os signals
 	doneOS := make(chan os.Signal, 1)

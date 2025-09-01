@@ -33,14 +33,14 @@ func TestManagePOSTWithOK(t *testing.T) {
 		t.Errorf("Code %d was expected, but %d was received", http.StatusCreated, res.StatusCode)
 	}
 
-	defer func() {
-		_ = res.Body.Close()
-	}()
-
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		t.Errorf("Body read error %v", err)
 	}
+
+	defer func() {
+		_ = res.Body.Close()
+	}()
 
 	if len(resBody) == 0 {
 		t.Errorf("Body must be present in response")
@@ -70,6 +70,10 @@ func TestManageGETWithOK(t *testing.T) {
 	fn(w, r)
 
 	res := w.Result()
+
+	defer func() {
+		_ = res.Body.Close()
+	}()
 
 	if res.StatusCode != http.StatusTemporaryRedirect {
 		t.Errorf("Code %d was expected, but %d was received", http.StatusTemporaryRedirect, res.StatusCode)

@@ -117,8 +117,7 @@ func NewURLStorage(StorageName string) (*URLStorage, error) {
 		"",
 		Storage{make(map[string][]string), make(map[string][]string)},
 	}
-	var err error
-	err = us.loadStorage(StorageName)
+	err := us.loadStorage(StorageName)
 	return us, err
 }
 
