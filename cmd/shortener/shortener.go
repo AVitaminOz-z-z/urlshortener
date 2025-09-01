@@ -36,14 +36,14 @@ func main() {
 	// loading environment
 	appEnv, err := config.NewAppEnv()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
 
 	// creating url-storage
 	urlStorage, err := storage.NewURLStorage(appEnv.StorageName)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
 	defer func() {
@@ -59,11 +59,11 @@ func main() {
 
 	// notify os signals
 	doneOS := make(chan os.Signal, 1)
-	signal.Notify(doneOS, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGQUIT)
+	signal.Notify(doneOS, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	// listen http-server
 	go func() {
-		fmt.Println("AVitaminOz-z-z HTTP-Server v0.1 started on " + appEnv.SrvAddr)
+		fmt.Printf("AVitaminOz-z-z HTTP-Server v0.1 started on %v\n", appEnv.SrvAddr)
 		err = http.ListenAndServe(appEnv.SrvAddr, R)
 		if err != nil {
 			fmt.Println(err)
@@ -72,5 +72,5 @@ func main() {
 	}()
 
 	s := <-doneOS
-	fmt.Println(fmt.Sprintf("AVitaminOz-z-z HTTP-Server v0.1 (%s) was finished. Got <%v> signal.", appEnv.SrvAddr, s))
+	fmt.Printf("AVitaminOz-z-z HTTP-Server v0.1 (%s) was finished. Got <%v> signal.\n", appEnv.SrvAddr, s)
 }
