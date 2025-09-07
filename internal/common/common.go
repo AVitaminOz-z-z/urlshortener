@@ -11,7 +11,8 @@ const (
 	RandomCharset = "abcdefghijklmnopqrstuvwxyz" + // lowercase
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ" + // uppercase
 		"0123456789" // digits
-	MinRndStrLen = 16
+	MinRndStrLen  = 16
+	AppSrvVersion = "AVitaminOz-z-z HTTP-Server v0.2"
 )
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))

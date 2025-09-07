@@ -13,7 +13,7 @@ type Storage struct {
 
 type URLStorage struct {
 	StorageName string `json:"StorageName,omitempty"`
-	BaseAddr    string `json:"BaseAddr,omitempty"`
+	BaseURL     string `json:"BaseAddr,omitempty"`
 	Storage     `json:"Storage,omitempty"`
 }
 
@@ -121,6 +121,6 @@ func NewURLStorage(StorageName string) (*URLStorage, error) {
 	return us, err
 }
 
-func (us *URLStorage) SetBaseAddr(addr string) {
-	us.BaseAddr = addr
+func (us *URLStorage) SetBaseURL(addr string) {
+	us.BaseURL = addr
 }

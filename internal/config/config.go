@@ -6,66 +6,75 @@ import (
 )
 
 const (
+	defEnvFile     = "./.env"
 	defStorageName = "./.storage"
-	defSrvAddr     = "localhost:8080"
-	defBaseAddr    = "http://localhost:8080"
+	defSrvAddress  = "localhost:8080"
+	defBaseUrl     = "http://localhost:8080"
 )
+
+type AppArgs struct {
+	ArgsLen    int
+	EnvFile    string
+	SrvAddress string
+	BaseUrl    string
+}
 
 type AppEnv struct {
 	StorageName string
-	SrvAddr     string
-	BaseAddr    string
+	AppArgs
+}
+
+func newDefAppEnv() *AppEnv {
+	return &AppEnv{
+		defStorageName,
+		AppArgs{0,
+			defEnvFile,
+			defSrvAddress,
+			defSrvAddress,
+		},
+	}
+}
+
+func (env *AppEnv) LoadEnv(envFile string) error {
+	if err := godotenv.Load(envFile); err != nil {
+		return err
+	}
+	env.StorageName = loadEnv("URL_STORAGE")
+	env.SrvAddress = loadEnv("SERVER_ADDRESS")
+	env.BaseUrl = loadEnv("BASE_URL")
+	return nil
 }
 
 func NewAppEnv() (*AppEnv, error) {
-	aEnv := &AppEnv{
-		defStorageName,
-		defSrvAddr,
-		defBaseAddr,
-	}
-	dir, err := os.Getwd()
-	if err != nil {
-		// return default env
-		return aEnv, nil
-		//return nil, err
-	}
-	err = godotenv.Load(dir + "/.env")
-	if err != nil {
-		// return default env
-		return aEnv, nil
-		//return nil, err
-	}
-	aEnv = &AppEnv{
-		loadEnv(dir, "URL_STORAGE"),
-		loadEnv(dir, "HTTP_SERVER"),
-		loadEnv(dir, "BASE_ADDR"),
+	aEnv := newDefAppEnv()
+	if err := aEnv.LoadEnv(aEnv.EnvFile); err != nil {
+		return nil, err
 	}
 	return aEnv, nil
 }
 
-func loadEnv(dir, key string) string {
+func loadEnv(key string) string {
 	// load environments
 	lParam := os.Getenv(key)
-	// dir structure
 	switch key {
 	case "URL_STORAGE":
 		{
 			if lParam == "" {
-				lParam = dir + "/.storage"
+				lParam = defStorageName
 			}
 			break
 		}
-	case "HTTP_SERVER":
+	case "SERVER_ADDRESS":
 		{
 			if lParam == "" {
-				lParam = "localhost:8080"
+				lParam = defSrvAddress
 			}
 			break
 		}
-	case "BASE_ADDR":
+	case "BASE_URL":
 		{
 			if lParam == "" {
-				lParam = "http://localhost:8080"
+				lParam = defBaseUrl
 			}
 			break
 		}

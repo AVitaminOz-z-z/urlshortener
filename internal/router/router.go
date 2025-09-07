@@ -10,6 +10,7 @@ import (
 func NewURLRouter(urlStorage *storage.URLStorage) chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.Recoverer)
+	r.Use(middleware.URLFormat)
 	r.Get("/{id}", handler.ManageGET(urlStorage))
 	r.Post("/", handler.ManagePOST(urlStorage))
 	return r

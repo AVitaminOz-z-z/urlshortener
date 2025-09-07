@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/storage"
+	"github.com/go-chi/chi/v5/middleware"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,7 +17,7 @@ func TestManagePOSTWithOK(t *testing.T) {
 	)
 
 	us, _ := storage.NewURLStorage("./.test_storage")
-	us.SetBaseAddr("http://localhost:8080")
+	us.SetBaseURL("http://localhost:8080")
 	var fn http.HandlerFunc
 
 	r := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader([]byte(TestURL)))
@@ -58,10 +59,11 @@ func TestManageGETWithOK(t *testing.T) {
 	)
 
 	us, _ := storage.NewURLStorage("./.test_storage")
-	us.SetBaseAddr("http://localhost:8080")
+	us.SetBaseURL("http://localhost:8080")
 	var fn http.HandlerFunc
 
 	r := httptest.NewRequest(http.MethodGet, TargetPath, nil)
+	r.Context().Value(middleware.URLFormatCtxKey)
 	r.Header.Set("Content-Type", "text/plaint; charset=utf-8")
 
 	w := httptest.NewRecorder()
