@@ -72,36 +72,19 @@ func (a *AppServer) GetAppEnv() *config.AppEnv {
 }
 
 func (a *AppServer) GetOSArgs(env *config.AppEnv) *config.AppArgs {
-	type ptrAppArgs struct {
-		ArgsLen    int
-		EnvFile    *string
-		SrvAddress *string
-		BaseURL    *string
-	}
-
-	pAppArgs := ptrAppArgs{
-		0,
-		nil,
-		nil,
-		nil,
-	}
+	pAppArgs := &config.AppArgs{}
 
 	flag.CommandLine.SetOutput(os.Stdout)
-	pAppArgs.EnvFile = flag.String("env", env.EnvFile, "[-env\t| --env]\t->\t/path/to/env/file")
-	pAppArgs.SrvAddress = flag.String("a", env.SrvAddress, "[-a\t| --a]\t->\tserver:port")
-	pAppArgs.BaseURL = flag.String("b", env.BaseURL, "[-b\t| --b]\t->\thttp(s)://server:port")
+	flag.StringVar(&pAppArgs.EnvFile, "env", env.EnvFile, "[-env\t| --env]\t->\t/path/to/env/file")
+	flag.StringVar(&pAppArgs.SrvAddress, "a", env.SrvAddress, "[-a\t| --a]\t->\t[server]:port")
+	flag.StringVar(&pAppArgs.BaseURL, "b", env.BaseURL, "[-b\t| --b]\t->\thttp(s)://server:port")
 
 	if len(os.Args[1:]) > 0 {
 		flag.Parse()
 		pAppArgs.ArgsLen = len(os.Args[1:])
 	}
 
-	return &config.AppArgs{
-		ArgsLen:    pAppArgs.ArgsLen,
-		EnvFile:    *pAppArgs.EnvFile,
-		SrvAddress: *pAppArgs.SrvAddress,
-		BaseURL:    *pAppArgs.BaseURL,
-	}
+	return pAppArgs
 }
 
 func (a *AppServer) ResetAppArgs(args *config.AppArgs) {
