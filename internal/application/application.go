@@ -91,13 +91,13 @@ func (a *AppServer) GetOSArgs(env *config.AppEnv) *config.AppArgs {
 	pAppArgs.SrvAddress = flag.String("a", env.SrvAddress, "[-a\t| --a]\t->\tserver:port")
 	pAppArgs.BaseURL = flag.String("b", env.BaseURL, "[-b\t| --b]\t->\thttp(s)://server:port")
 
-	osArgsLen := len(os.Args[1:])
-	if osArgsLen > 0 {
+	if len(os.Args[1:]) > 0 {
 		flag.Parse()
+		pAppArgs.ArgsLen = len(os.Args[1:])
 	}
 
 	return &config.AppArgs{
-		ArgsLen:    osArgsLen,
+		ArgsLen:    pAppArgs.ArgsLen,
 		EnvFile:    *pAppArgs.EnvFile,
 		SrvAddress: *pAppArgs.SrvAddress,
 		BaseURL:    *pAppArgs.BaseURL,
