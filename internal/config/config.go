@@ -9,14 +9,14 @@ const (
 	defEnvFile     = "./.env"
 	defStorageName = "./.storage"
 	defSrvAddress  = "localhost:8080"
-	defBaseUrl     = "http://localhost:8080"
+	defBaseURL     = "http://localhost:8080"
 )
 
 type AppArgs struct {
 	ArgsLen    int
 	EnvFile    string
 	SrvAddress string
-	BaseUrl    string
+	BaseURL    string
 }
 
 type AppEnv struct {
@@ -41,7 +41,7 @@ func (env *AppEnv) LoadEnv(envFile string) error {
 	}
 	env.StorageName = loadEnv("URL_STORAGE")
 	env.SrvAddress = loadEnv("SERVER_ADDRESS")
-	env.BaseUrl = loadEnv("BASE_URL")
+	env.BaseURL = loadEnv("BASE_URL")
 	return nil
 }
 
@@ -74,7 +74,7 @@ func loadEnv(key string) string {
 	case "BASE_URL":
 		{
 			if lParam == "" {
-				lParam = defBaseUrl
+				lParam = defBaseURL
 			}
 			break
 		}

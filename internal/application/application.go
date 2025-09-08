@@ -38,7 +38,7 @@ func (a *AppServer) SetStorage(name string) error {
 		return err
 	} else {
 		a.AppStorage = uStorage
-		a.GetURLStorage().SetBaseURL(a.GetAppEnv().BaseUrl)
+		a.GetURLStorage().SetBaseURL(a.GetAppEnv().BaseURL)
 		return nil
 	}
 }
@@ -76,7 +76,7 @@ func (a *AppServer) GetOSArgs(env *config.AppEnv) *config.AppArgs {
 		ArgsLen    int
 		EnvFile    *string
 		SrvAddress *string
-		BaseUrl    *string
+		BaseURL    *string
 	}
 
 	pAppArgs := ptrAppArgs{
@@ -89,24 +89,25 @@ func (a *AppServer) GetOSArgs(env *config.AppEnv) *config.AppArgs {
 	flag.CommandLine.SetOutput(os.Stdout)
 	pAppArgs.EnvFile = flag.String("env", env.EnvFile, "[-env\t| --env]\t->\t/path/to/env/file")
 	pAppArgs.SrvAddress = flag.String("a", env.SrvAddress, "[-a\t| --a]\t->\tserver:port")
-	pAppArgs.BaseUrl = flag.String("b", env.BaseUrl, "[-b\t| --b]\t->\thttp(s)://server:port")
+	pAppArgs.BaseURL = flag.String("b", env.BaseURL, "[-b\t| --b]\t->\thttp(s)://server:port")
 
-	if len(os.Args[1:]) > 0 {
+	osArgsLen := len(os.Args[1:])
+	if osArgsLen > 0 {
 		flag.Parse()
 	}
 
 	return &config.AppArgs{
-		ArgsLen:    len(os.Args[1:]),
+		ArgsLen:    osArgsLen,
 		EnvFile:    *pAppArgs.EnvFile,
 		SrvAddress: *pAppArgs.SrvAddress,
-		BaseUrl:    *pAppArgs.BaseUrl,
+		BaseURL:    *pAppArgs.BaseURL,
 	}
 }
 
 func (a *AppServer) ResetAppArgs(args *config.AppArgs) {
 	if args.ArgsLen > 0 {
 		a.AppEnv.AppArgs = *args
-		a.GetURLStorage().SetBaseURL(a.GetAppEnv().BaseUrl)
+		a.GetURLStorage().SetBaseURL(a.GetAppEnv().BaseURL)
 	}
 }
 
