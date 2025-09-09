@@ -22,5 +22,5 @@ vendor/
 .idea
 .vscode
 
-# shortenertestbeta
 shortenertestbeta
+runtests

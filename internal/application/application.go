@@ -3,9 +3,12 @@ package application
 import (
 	"flag"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/config"
+	"github.com/AVitaminOz-z-z/urlshortener.git/internal/logger"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/router"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/storage"
 	"github.com/go-chi/chi/v5"
+	"io"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -14,6 +17,7 @@ type AppServer struct {
 	AppEnv     *config.AppEnv
 	AppStorage *storage.URLStorage
 	AppRouter  chi.Router
+	AppLogger  *slog.Logger
 }
 
 func NewApp() *AppServer {
@@ -21,10 +25,11 @@ func NewApp() *AppServer {
 		nil,
 		nil,
 		nil,
+		nil,
 	}
 }
 
-func (a *AppServer) SetEnv() error {
+func (a *AppServer) setEnv() error {
 	if env, err := config.NewAppEnv(); err != nil {
 		return err
 	} else {
@@ -33,45 +38,53 @@ func (a *AppServer) SetEnv() error {
 	}
 }
 
-func (a *AppServer) SetStorage(name string) error {
+func (a *AppServer) setStorage(name string) error {
 	if uStorage, err := storage.NewURLStorage(name); err != nil {
 		return err
 	} else {
 		a.AppStorage = uStorage
-		a.GetURLStorage().SetBaseURL(a.GetAppEnv().BaseURL)
+		a.getURLStorage().SetBaseURL(a.getAppEnv().BaseURL)
 		return nil
 	}
 }
 
-func (a *AppServer) SetRouter(storage *storage.URLStorage) {
-	a.AppRouter = router.NewURLRouter(storage)
+func (a *AppServer) setLogger(w io.Writer) {
+	a.AppLogger = logger.NewLogger(w)
 }
 
-func (a *AppServer) GetRouter() chi.Router {
+func (a *AppServer) setRouter() {
+	a.AppRouter = router.NewURLRouter(a.getURLStorage(), a.GetLogger())
+}
+
+func (a *AppServer) getRouter() chi.Router {
 	return a.AppRouter
 }
 
+func (a *AppServer) GetLogger() *slog.Logger {
+	return a.AppLogger
+}
+
 func (a *AppServer) GetServerAddr() string {
-	return a.GetAppEnv().SrvAddress
+	return a.getAppEnv().SrvAddress
 }
 
-func (a *AppServer) GetURLStorageName() string {
-	return a.GetAppEnv().StorageName
+func (a *AppServer) getURLStorageName() string {
+	return a.getAppEnv().StorageName
 }
 
-func (a *AppServer) GetURLStorage() *storage.URLStorage {
+func (a *AppServer) getURLStorage() *storage.URLStorage {
 	return a.AppStorage
 }
 
 func (a *AppServer) SaveURLStorage() error {
-	return a.GetURLStorage().SaveStorage(a.GetURLStorageName())
+	return a.getURLStorage().SaveStorage(a.getURLStorageName())
 }
 
-func (a *AppServer) GetAppEnv() *config.AppEnv {
+func (a *AppServer) getAppEnv() *config.AppEnv {
 	return a.AppEnv
 }
 
-func (a *AppServer) GetOSArgs(env *config.AppEnv) *config.AppArgs {
+func (a *AppServer) getOSArgs(env *config.AppEnv) *config.AppArgs {
 	pAppArgs := &config.AppArgs{}
 
 	flag.CommandLine.SetOutput(os.Stdout)
@@ -87,33 +100,36 @@ func (a *AppServer) GetOSArgs(env *config.AppEnv) *config.AppArgs {
 	return pAppArgs
 }
 
-func (a *AppServer) ResetAppArgs(args *config.AppArgs) {
+func (a *AppServer) resetAppArgs(args *config.AppArgs) {
 	if args.ArgsLen > 0 {
 		a.AppEnv.AppArgs = *args
-		a.GetURLStorage().SetBaseURL(a.GetAppEnv().BaseURL)
+		a.getURLStorage().SetBaseURL(a.getAppEnv().BaseURL)
 	}
 }
 
 func (a *AppServer) PrepareApp() error {
 	// loading environment
-	if err := a.SetEnv(); err != nil {
+	if err := a.setEnv(); err != nil {
 		return err
 	}
 
 	// creating url-storage
-	if err := a.SetStorage(a.GetURLStorageName()); err != nil {
+	if err := a.setStorage(a.getURLStorageName()); err != nil {
 		return err
 	}
 
+	// creating logger
+	a.setLogger(os.Stdout)
+
 	// reset App Args via OS Args
-	a.ResetAppArgs(a.GetOSArgs(a.GetAppEnv()))
+	a.resetAppArgs(a.getOSArgs(a.getAppEnv()))
 
 	// creating router
-	a.SetRouter(a.GetURLStorage())
+	a.setRouter()
 
 	return nil
 }
 
 func (a *AppServer) OnAir() error {
-	return http.ListenAndServe(a.GetServerAddr(), a.GetRouter())
+	return http.ListenAndServe(a.GetServerAddr(), a.getRouter())
 }

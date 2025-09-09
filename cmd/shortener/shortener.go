@@ -29,8 +29,9 @@ func main() {
 	signal.Notify(doneOS, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	// run application
+	log := app.GetLogger()
 	go func() {
-		fmt.Printf("%s started on %v\n", common.AppSrvVersion, app.GetServerAddr())
+		log.Info(fmt.Sprintf("%s started on %v", common.AppSrvVersion, app.GetServerAddr()))
 		if err := app.OnAir(); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
@@ -39,5 +40,5 @@ func main() {
 
 	// finish application
 	s := <-doneOS
-	fmt.Printf("%s (%s) was finished via <%v> signal\n", common.AppSrvVersion, app.GetServerAddr(), s)
+	log.Info(fmt.Sprintf("%s (%s) was finished via <%v> signal", common.AppSrvVersion, app.GetServerAddr(), s))
 }

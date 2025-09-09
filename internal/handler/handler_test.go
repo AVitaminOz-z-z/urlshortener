@@ -25,7 +25,7 @@ func TestManagePOSTWithOK(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = ManagePOST(us)
+	fn = CreateShortURL(us)
 	fn(w, r)
 
 	res := w.Result()
@@ -68,7 +68,7 @@ func TestManageGETWithOK(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = ManageGET(us)
+	fn = RedirectToFullURL(us)
 	fn(w, r)
 
 	res := w.Result()

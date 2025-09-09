@@ -39,7 +39,7 @@ func writeFullURL(fullURL string, w http.ResponseWriter) {
 	_, _ = w.Write(nil)
 }
 
-func ManagePOST(urlStorage *storage.URLStorage) http.HandlerFunc {
+func CreateShortURL(storage *storage.URLStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// unsupported content type
 		if !checkContentType(r) {
@@ -53,12 +53,11 @@ func ManagePOST(urlStorage *storage.URLStorage) http.HandlerFunc {
 			return
 		}
 		// finding and send short url
-		//WriteShortURL(r.Host+"/"+urlStorage.ReturnShortURL(string(body)), w)
-		writeShortURL(urlStorage.BaseURL+"/"+urlStorage.ReturnShortURL(string(body)), w)
+		writeShortURL(fmt.Sprintf("%s/%s", storage.BaseURL, storage.ReturnShortURL(string(body))), w)
 	}
 }
 
-func ManageGET(urlStorage *storage.URLStorage) http.HandlerFunc {
+func RedirectToFullURL(storage *storage.URLStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// unsupported content type
 		/*if !checkContentType(r) {
@@ -67,11 +66,11 @@ func ManageGET(urlStorage *storage.URLStorage) http.HandlerFunc {
 		}
 		id := chi.URLParam(r, "id")*/
 		id := r.URL.Path[1:]
-		fullURL := urlStorage.ReturnFullURL(id)
-		if fullURL == "" {
+		redirectURL := storage.ReturnFullURL(id)
+		if redirectURL == "" {
 			writeBadRequest(w, fmt.Sprintf("unmanaged short url by {id} = %s", id))
 			return
 		}
-		writeFullURL(fullURL, w)
+		writeFullURL(redirectURL, w)
 	}
 }
