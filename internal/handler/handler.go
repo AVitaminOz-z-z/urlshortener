@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/storage"
 	"io"
@@ -9,16 +10,36 @@ import (
 )
 
 const (
-	AvailableContentTypeRgx = `^text/plain(|.+)$`
-	DefContentType          = "text/plain; charset=utf-8"
+	AvailableContentTypeRgx    = `^text/plain(|.+)$`
+	AvailableAPIContentTypeRgx = `^application/json(|.+)$`
+	DefContentType             = "text/plain; charset=utf-8"
+	DefAPIContentType          = "application/json"
+)
+
+type (
+	APIRequest struct {
+		URL string `json:"url,omitempty"`
+	}
+
+	APIResult struct {
+		Result string `json:"result,omitempty"`
+	}
 )
 
 func checkContentType(r *http.Request) bool {
 	return (regexp.MustCompile(AvailableContentTypeRgx)).MatchString(r.Header.Get("Content-Type"))
 }
 
+func checkAPIContentType(r *http.Request) bool {
+	return (regexp.MustCompile(AvailableAPIContentTypeRgx)).MatchString(r.Header.Get("Content-Type"))
+}
+
 func writeDefaultHeader(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", DefContentType)
+}
+
+func writeAPIDefaultHeader(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", DefAPIContentType)
 }
 
 func writeBadRequest(w http.ResponseWriter, ext string) {
@@ -32,6 +53,17 @@ func writeShortURL(shortURL string, w http.ResponseWriter) {
 	_, _ = w.Write([]byte(shortURL))
 }
 
+func writeAPIShortURL(shortURL string, w http.ResponseWriter) {
+	writeAPIDefaultHeader(w)
+	w.WriteHeader(http.StatusCreated)
+	// make & write result
+	resp := APIResult{
+		Result: shortURL,
+	}
+	enc := json.NewEncoder(w)
+	_ = enc.Encode(resp)
+}
+
 func writeFullURL(fullURL string, w http.ResponseWriter) {
 	writeDefaultHeader(w)
 	w.Header().Set("Location", fullURL)
@@ -41,7 +73,7 @@ func writeFullURL(fullURL string, w http.ResponseWriter) {
 
 func CreateShortURL(storage *storage.URLStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// unsupported content type
+		// check content type
 		if !checkContentType(r) {
 			writeBadRequest(w, "unsupported content type")
 			return
@@ -54,6 +86,31 @@ func CreateShortURL(storage *storage.URLStorage) http.HandlerFunc {
 		}
 		// finding and send short url
 		writeShortURL(fmt.Sprintf("%s/%s", storage.BaseURL, storage.ReturnShortURL(string(body))), w)
+	}
+}
+
+func CreateAPIShortURL(storage *storage.URLStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// check content type
+		if !checkAPIContentType(r) {
+			writeBadRequest(w, "unsupported content type")
+			return
+		}
+		// decode error
+		var req APIRequest
+		dec := json.NewDecoder(r.Body)
+		if err := dec.Decode(&req); err != nil {
+			writeBadRequest(w, fmt.Sprintf("can't unmarshal request to struct: %v", err))
+			return
+		}
+		// req URL is empty
+		if req.URL == "" {
+			writeBadRequest(w, "request URL is empty")
+			return
+		}
+
+		// finding and send short url
+		writeAPIShortURL(fmt.Sprintf("%s/%s", storage.BaseURL, storage.ReturnShortURL(req.URL)), w)
 	}
 }
 

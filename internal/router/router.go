@@ -17,5 +17,6 @@ func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger) chi.Router {
 	r.Use(middleware.URLFormat)
 	r.Get("/{id}", handler.RedirectToFullURL(storage))
 	r.Post("/", handler.CreateShortURL(storage))
+	r.Post("/api/shorten", handler.CreateAPIShortURL(storage))
 	return r
 }
