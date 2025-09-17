@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	m "github.com/AVitaminOz-z-z/urlshortener.git/internal/model"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/storage"
 	"github.com/go-chi/chi/v5/middleware"
 	"io"
@@ -25,7 +26,7 @@ func TestCreateShortURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = CreateShortURL(us)
+	fn = CreateShortURL(m.NewDefHandlerConfig(us, nil))
 	fn(w, r)
 
 	res := w.Result()
@@ -67,7 +68,7 @@ func TestAPICreateShortURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = CreateAPIShortURL(us)
+	fn = CreateShortURL(m.NewAPIHandlerConfig(us, nil))
 	fn(w, r)
 
 	res := w.Result()
@@ -110,7 +111,7 @@ func TestRedirectToFullURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = RedirectToFullURL(us)
+	fn = RedirectToFullURL(m.NewDefHandlerConfig(us, nil))
 	fn(w, r)
 
 	res := w.Result()

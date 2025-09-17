@@ -1,8 +1,10 @@
 package router
 
 import (
+	mwCompress "github.com/AVitaminOz-z-z/urlshortener.git/internal/compress"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/handler"
 	mwLogger "github.com/AVitaminOz-z-z/urlshortener.git/internal/logger"
+	m "github.com/AVitaminOz-z-z/urlshortener.git/internal/model"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -10,13 +12,18 @@ import (
 )
 
 func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger) chi.Router {
+	// Default handler config
+	hcDef := m.NewDefHandlerConfig(storage, logger)
+	// API handler config
+	hcAPI := m.NewAPIHandlerConfig(storage, logger)
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(mwLogger.NewMiddlewareLogger(logger))
+	r.Use(mwCompress.NewGzipMiddleware())
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
-	r.Get("/{id}", handler.RedirectToFullURL(storage))
-	r.Post("/", handler.CreateShortURL(storage))
-	r.Post("/api/shorten", handler.CreateAPIShortURL(storage))
+	r.Get("/{id}", handler.RedirectToFullURL(hcDef))
+	r.Post("/", handler.CreateShortURL(hcDef))
+	r.Post("/api/shorten", handler.CreateShortURL(hcAPI))
 	return r
 }

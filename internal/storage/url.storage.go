@@ -113,9 +113,8 @@ func (us *URLStorage) randomString() string {
 
 func NewURLStorage(StorageName string) (*URLStorage, error) {
 	us := &URLStorage{
-		StorageName,
-		"",
-		Storage{make(map[string][]string), make(map[string][]string)},
+		StorageName: StorageName,
+		Storage:     Storage{POSTStorage: make(map[string][]string), GETStorage: make(map[string][]string)},
 	}
 	err := us.loadStorage(StorageName)
 	return us, err
