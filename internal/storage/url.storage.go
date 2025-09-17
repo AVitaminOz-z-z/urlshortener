@@ -49,8 +49,8 @@ func (us *URLStorage) storageToByteA() ([]byte, error) {
 	}
 }
 
-func (us *URLStorage) SaveStorage(StorageName string) error {
-	err := us.prepareStorageFile(StorageName)
+func (us *URLStorage) SaveStorage(storageName string) error {
+	err := us.prepareStorageFile(storageName)
 	if err != nil {
 		return err
 	}
@@ -58,19 +58,19 @@ func (us *URLStorage) SaveStorage(StorageName string) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(StorageName, sData, os.FileMode(0644))
+	err = os.WriteFile(storageName, sData, os.FileMode(0644))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (us *URLStorage) prepareStorageFile(StorageName string) error {
-	_, err := os.Stat(StorageName)
+func (us *URLStorage) prepareStorageFile(storageName string) error {
+	_, err := os.Stat(storageName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			var f *os.File
-			f, err = os.OpenFile(StorageName, os.O_RDWR|os.O_CREATE, os.FileMode(0644))
+			f, err = os.OpenFile(storageName, os.O_RDWR|os.O_CREATE, os.FileMode(0644))
 			if err != nil {
 				return err
 			}
@@ -85,12 +85,18 @@ func (us *URLStorage) prepareStorageFile(StorageName string) error {
 	return nil
 }
 
-func (us *URLStorage) loadStorage(StorageName string) error {
-	err := us.prepareStorageFile(StorageName)
+func (us *URLStorage) ResetStorage(storageName, addr string) error {
+	us.StorageName = storageName
+	us.BaseURL = addr
+	return us.loadStorage(storageName)
+}
+
+func (us *URLStorage) loadStorage(storageName string) error {
+	err := us.prepareStorageFile(storageName)
 	if err != nil {
 		return err
 	}
-	fBytes, err := os.ReadFile(StorageName)
+	fBytes, err := os.ReadFile(storageName)
 	if err != nil {
 		return err
 	}
@@ -111,12 +117,12 @@ func (us *URLStorage) randomString() string {
 	return common.GetRandomString(common.MinRndStrLen)
 }
 
-func NewURLStorage(StorageName string) (*URLStorage, error) {
+func NewURLStorage(storageName string) (*URLStorage, error) {
 	us := &URLStorage{
-		StorageName: StorageName,
+		StorageName: storageName,
 		Storage:     Storage{POSTStorage: make(map[string][]string), GETStorage: make(map[string][]string)},
 	}
-	err := us.loadStorage(StorageName)
+	err := us.loadStorage(storageName)
 	return us, err
 }
 

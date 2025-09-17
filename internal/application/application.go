@@ -91,6 +91,7 @@ func (a *AppServer) getOSArgs(env *config.AppEnv) *config.AppArgs {
 	flag.StringVar(&pAppArgs.EnvFile, "env", env.EnvFile, "[-env\t| --env]\t->\t/path/to/env/file")
 	flag.StringVar(&pAppArgs.SrvAddress, "a", env.SrvAddress, "[-a\t| --a]\t->\t[server]:port")
 	flag.StringVar(&pAppArgs.BaseURL, "b", env.BaseURL, "[-b\t| --b]\t->\thttp(s)://server:port")
+	flag.StringVar(&pAppArgs.StorageName, "f", env.StorageName, "[-f\t| --f]\t->\tpath/to/storage/file")
 
 	if len(os.Args[1:]) > 0 {
 		flag.Parse()
@@ -100,11 +101,14 @@ func (a *AppServer) getOSArgs(env *config.AppEnv) *config.AppArgs {
 	return pAppArgs
 }
 
-func (a *AppServer) resetAppArgs(args *config.AppArgs) {
+func (a *AppServer) resetAppArgs(args *config.AppArgs) error {
+	var err error
 	if args.ArgsLen > 0 {
 		a.AppEnv.AppArgs = *args
-		a.getURLStorage().SetBaseURL(a.getAppEnv().BaseURL)
+		err = a.getURLStorage().ResetStorage(a.getAppEnv().StorageName, a.getAppEnv().BaseURL)
+		/*a.getURLStorage().SetBaseURL(a.getAppEnv().BaseURL)*/
 	}
+	return err
 }
 
 func (a *AppServer) PrepareApp() error {
@@ -121,8 +125,10 @@ func (a *AppServer) PrepareApp() error {
 	// creating logger
 	a.setLogger(os.Stdout)
 
-	// reset App Args via OS Args
-	a.resetAppArgs(a.getOSArgs(a.getAppEnv()))
+	// reset App-args via OS-args
+	if err := a.resetAppArgs(a.getOSArgs(a.getAppEnv())); err != nil {
+		return err
+	}
 
 	// creating router
 	a.setRouter()
