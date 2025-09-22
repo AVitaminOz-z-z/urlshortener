@@ -60,34 +60,23 @@ func NewAppEnv() (*AppEnv, error) {
 func loadEnv(key string) string {
 	// load environments
 	lParam := os.Getenv(key)
-	switch key {
-	/*case "URL_STORAGE":
-	{
-		if lParam == "" {
-			lParam = defStorageName
-		}
-		break
-	}*/
-	case "FILE_STORAGE_PATH":
-		{
-			if lParam == "" {
+	if lParam == "" {
+		switch key {
+		case "FILE_STORAGE_PATH":
+			{
 				lParam = defStorageName
+				break
 			}
-			break
-		}
-	case "SERVER_ADDRESS":
-		{
-			if lParam == "" {
+		case "SERVER_ADDRESS":
+			{
 				lParam = defSrvAddress
+				break
 			}
-			break
-		}
-	case "BASE_URL":
-		{
-			if lParam == "" {
+		case "BASE_URL":
+			{
 				lParam = defBaseURL
+				break
 			}
-			break
 		}
 	}
 	return lParam

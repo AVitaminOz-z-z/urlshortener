@@ -21,21 +21,16 @@ type AppServer struct {
 }
 
 func NewApp() *AppServer {
-	return &AppServer{
-		nil,
-		nil,
-		nil,
-		nil,
-	}
+	return &AppServer{}
 }
 
 func (a *AppServer) setEnv() error {
-	if env, err := config.NewAppEnv(); err != nil {
+	env, err := config.NewAppEnv()
+	if err != nil {
 		return err
-	} else {
-		a.AppEnv = env
-		return nil
 	}
+	a.AppEnv = env
+	return nil
 }
 
 func (a *AppServer) setStorage(name string) error {
