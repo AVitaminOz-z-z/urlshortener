@@ -129,9 +129,10 @@ func (a *AppServer) resetAppArgs(args *config.AppArgs) error {
 	if err := a.getURLStorage().ResetStorage(a.getAppEnv().StorageName, a.getAppEnv().BaseURL); err != nil {
 		return err
 	}
-	if err := a.setPgDB(a.getAppEnv().PgDSN); err != nil {
+	_ = a.setPgDB(a.getAppEnv().PgDSN)
+	/*if err := a.setPgDB(a.getAppEnv().PgDSN); err != nil {
 		return err
-	}
+	}*/
 	/*if args.ArgsLen > 0 {
 		a.AppEnv.AppArgs = *args
 		err = a.getURLStorage().ResetStorage(a.getAppEnv().StorageName, a.getAppEnv().BaseURL)
@@ -151,9 +152,10 @@ func (a *AppServer) PrepareApp() error {
 	}
 
 	// creating database
-	if err := a.setPgDB(a.getPgDSN()); err != nil {
+	_ = a.setPgDB(a.getPgDSN())
+	/*if err := a.setPgDB(a.getPgDSN()); err != nil {
 		return err
-	}
+	}*/
 
 	// creating logger
 	a.setLogger(os.Stdout)
