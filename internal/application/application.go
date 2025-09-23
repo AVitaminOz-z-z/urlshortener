@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type AppServer struct {
@@ -18,6 +19,7 @@ type AppServer struct {
 	AppStorage *storage.URLStorage
 	AppRouter  chi.Router
 	AppLogger  *slog.Logger
+	PgDB       *storage.PgDB
 }
 
 func NewApp() *AppServer {
@@ -31,6 +33,16 @@ func (a *AppServer) setEnv() error {
 	}
 	a.AppEnv = env
 	return nil
+}
+
+func (a *AppServer) setPgDB(dsn string) error {
+	dbType := strings.Split(dsn, ":")[0]
+	if pgDB, err := storage.NewPgDB(dbType, dsn); err != nil {
+		return err
+	} else {
+		a.PgDB = pgDB
+		return nil
+	}
 }
 
 func (a *AppServer) setStorage(name string) error {
@@ -48,11 +60,15 @@ func (a *AppServer) setLogger(w io.Writer) {
 }
 
 func (a *AppServer) setRouter() {
-	a.AppRouter = router.NewURLRouter(a.getURLStorage(), a.GetLogger())
+	a.AppRouter = router.NewURLRouter(a.getURLStorage(), a.GetLogger(), a.getPgDB())
 }
 
 func (a *AppServer) getRouter() chi.Router {
 	return a.AppRouter
+}
+
+func (a *AppServer) getPgDB() *storage.PgDB {
+	return a.PgDB
 }
 
 func (a *AppServer) GetLogger() *slog.Logger {
@@ -65,6 +81,10 @@ func (a *AppServer) GetServerAddr() string {
 
 func (a *AppServer) getURLStorageName() string {
 	return a.getAppEnv().StorageName
+}
+
+func (a *AppServer) getPgDSN() string {
+	return a.getAppEnv().PgDSN
 }
 
 func (a *AppServer) getURLStorage() *storage.URLStorage {
@@ -87,6 +107,7 @@ func (a *AppServer) getOSArgs(env *config.AppEnv) *config.AppArgs {
 	flag.StringVar(&pAppArgs.SrvAddress, "a", env.SrvAddress, "[-a\t| --a]\t->\t[server]:port")
 	flag.StringVar(&pAppArgs.BaseURL, "b", env.BaseURL, "[-b\t| --b]\t->\thttp(s)://server:port")
 	flag.StringVar(&pAppArgs.StorageName, "f", env.StorageName, "[-f\t| --f]\t->\tpath/to/storage/file")
+	flag.StringVar(&pAppArgs.PgDSN, "d", env.PgDSN, "[-d\t| --d]\t->\tDSN connection string")
 
 	if len(os.Args[1:]) > 0 {
 		flag.Parse()
@@ -97,13 +118,25 @@ func (a *AppServer) getOSArgs(env *config.AppEnv) *config.AppArgs {
 }
 
 func (a *AppServer) resetAppArgs(args *config.AppArgs) error {
-	var err error
-	if args.ArgsLen > 0 {
+	//var err error
+
+	// no args
+	if args.ArgsLen == 0 {
+		return nil
+	}
+	// new args
+	a.AppEnv.AppArgs = *args
+	if err := a.getURLStorage().ResetStorage(a.getAppEnv().StorageName, a.getAppEnv().BaseURL); err != nil {
+		return err
+	}
+	if err := a.setPgDB(a.getAppEnv().PgDSN); err != nil {
+		return err
+	}
+	/*if args.ArgsLen > 0 {
 		a.AppEnv.AppArgs = *args
 		err = a.getURLStorage().ResetStorage(a.getAppEnv().StorageName, a.getAppEnv().BaseURL)
-		/*a.getURLStorage().SetBaseURL(a.getAppEnv().BaseURL)*/
-	}
-	return err
+	}*/
+	return nil
 }
 
 func (a *AppServer) PrepareApp() error {
@@ -114,6 +147,11 @@ func (a *AppServer) PrepareApp() error {
 
 	// creating url-storage
 	if err := a.setStorage(a.getURLStorageName()); err != nil {
+		return err
+	}
+
+	// creating database
+	if err := a.setPgDB(a.getPgDSN()); err != nil {
 		return err
 	}
 

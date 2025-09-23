@@ -12,7 +12,7 @@ const (
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ" + // uppercase
 		"0123456789" // digits
 	MinRndStrLen  = 16
-	AppSrvVersion = "AVitaminOz-z-z HTTP-Server v0.2"
+	AppSrvVersion = "AVitaminOz-z-z HTTP-Server v0.3"
 )
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))

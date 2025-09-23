@@ -10,10 +10,10 @@ import (
 )
 
 func main() {
-	// new empty application.go
+	// new empty application
 	app := application.NewApp()
 
-	// prepare application.go
+	// prepare application
 	if err := app.PrepareApp(); err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)

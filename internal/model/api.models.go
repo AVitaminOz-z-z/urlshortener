@@ -32,6 +32,7 @@ type HandlerDefaults struct {
 type HandlerConfig struct {
 	storage *storage.URLStorage
 	logger  *slog.Logger
+	pgDB    *storage.PgDB
 	*HandlerDefaults
 }
 
@@ -39,14 +40,19 @@ func (hc *HandlerConfig) GetStorage() *storage.URLStorage {
 	return hc.storage
 }
 
+func (hc *HandlerConfig) GetPgDB() *storage.PgDB {
+	return hc.pgDB
+}
+
 func (hc *HandlerConfig) GetLogger() *slog.Logger {
 	return hc.logger
 }
 
-func NewDefHandlerConfig(storage *storage.URLStorage, logger *slog.Logger) *HandlerConfig {
+func NewDefHandlerConfig(storage *storage.URLStorage, logger *slog.Logger, pgDB *storage.PgDB) *HandlerConfig {
 	return &HandlerConfig{
 		storage: storage,
 		logger:  logger,
+		pgDB:    pgDB,
 		HandlerDefaults: &HandlerDefaults{
 			ContentType:             DefContentType,
 			AvailableContentTypeRgx: DefAvailableContentTypeRgx,
@@ -54,13 +60,11 @@ func NewDefHandlerConfig(storage *storage.URLStorage, logger *slog.Logger) *Hand
 	}
 }
 
-func NewAPIHandlerConfig(storage *storage.URLStorage, logger *slog.Logger) *HandlerConfig {
-	return &HandlerConfig{
-		storage: storage,
-		logger:  logger,
-		HandlerDefaults: &HandlerDefaults{
-			ContentType:             APIContentType,
-			AvailableContentTypeRgx: APIAvailableContentTypeRgx,
-		},
+func NewAPIHandlerConfig(storage *storage.URLStorage, logger *slog.Logger, pgDB *storage.PgDB) *HandlerConfig {
+	hc := NewDefHandlerConfig(storage, logger, pgDB)
+	hc.HandlerDefaults = &HandlerDefaults{
+		ContentType:             APIContentType,
+		AvailableContentTypeRgx: APIAvailableContentTypeRgx,
 	}
+	return hc
 }

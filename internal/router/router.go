@@ -11,11 +11,11 @@ import (
 	"log/slog"
 )
 
-func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger) chi.Router {
+func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger, pgDB *storage.PgDB) chi.Router {
 	// Default handler config
-	hcDef := m.NewDefHandlerConfig(storage, logger)
+	hcDef := m.NewDefHandlerConfig(storage, logger, pgDB)
 	// API handler config
-	hcAPI := m.NewAPIHandlerConfig(storage, logger)
+	hcAPI := m.NewAPIHandlerConfig(storage, logger, pgDB)
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(mwLogger.NewMiddlewareLogger(logger))
@@ -23,6 +23,7 @@ func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger) chi.Router {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Get("/{id}", handler.RedirectToFullURL(hcDef))
+	r.Get("/ping", handler.PingPgDB(hcDef))
 	r.Post("/", handler.CreateShortURL(hcDef))
 	r.Post("/api/shorten", handler.CreateShortURL(hcAPI))
 	return r

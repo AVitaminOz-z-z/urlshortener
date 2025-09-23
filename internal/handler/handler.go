@@ -23,6 +23,18 @@ func writeBadRequest(w http.ResponseWriter, hc *m.HandlerConfig, ext string) {
 	http.Error(w, fmt.Sprintf("Bad Request (%s)", ext), http.StatusBadRequest)
 }
 
+func write5xx(w http.ResponseWriter, hc *m.HandlerConfig, ext string) {
+	writeDefaultHeader(w, hc)
+	hc.GetLogger().Error("Server Error", slog.String("Message", ext))
+	http.Error(w, fmt.Sprintf("Server Error (%s)", ext), http.StatusInternalServerError)
+}
+
+func writeOK(w http.ResponseWriter, hc *m.HandlerConfig) {
+	writeDefaultHeader(w, hc)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(nil)
+}
+
 func writeShortURL(w http.ResponseWriter, hc *m.HandlerConfig, shortURL string) {
 	writeDefaultHeader(w, hc)
 	w.WriteHeader(http.StatusCreated)
@@ -96,5 +108,14 @@ func RedirectToFullURL(hc *m.HandlerConfig) http.HandlerFunc {
 			return
 		}
 		writeFullURL(w, hc, redirectURL)
+	}
+}
+
+func PingPgDB(hc *m.HandlerConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := hc.GetPgDB().Ping(); err != nil {
+			write5xx(w, hc, err.Error())
+		}
+		writeOK(w, hc)
 	}
 }

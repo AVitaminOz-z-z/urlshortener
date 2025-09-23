@@ -10,6 +10,7 @@ const (
 	defStorageName = "./.storage"
 	defSrvAddress  = "localhost:8080"
 	defBaseURL     = "http://localhost:8080"
+	defPgDSN       = "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
 )
 
 type AppArgs struct {
@@ -18,10 +19,10 @@ type AppArgs struct {
 	SrvAddress  string
 	BaseURL     string
 	StorageName string
+	PgDSN       string
 }
 
 type AppEnv struct {
-	//StorageName string
 	AppArgs
 }
 
@@ -33,6 +34,7 @@ func newDefAppEnv() *AppEnv {
 			defSrvAddress,
 			defSrvAddress,
 			defStorageName,
+			defPgDSN,
 		},
 	}
 }
@@ -41,11 +43,10 @@ func (env *AppEnv) LoadEnv(envFile string) error {
 	if err := godotenv.Load(envFile); err != nil {
 		return err
 	}
-	//env.StorageName = loadEnv("URL_STORAGE")
-	//env.StorageName = loadEnv("FILE_STORAGE_PATH")
 	env.StorageName = loadEnv("FILE_STORAGE_PATH")
 	env.SrvAddress = loadEnv("SERVER_ADDRESS")
 	env.BaseURL = loadEnv("BASE_URL")
+	env.PgDSN = loadEnv("DATABASE_DSN")
 	return nil
 }
 
@@ -75,6 +76,11 @@ func loadEnv(key string) string {
 		case "BASE_URL":
 			{
 				lParam = defBaseURL
+				break
+			}
+		case "DATABASE_DSN":
+			{
+				lParam = defPgDSN
 				break
 			}
 		}

@@ -26,7 +26,7 @@ func TestCreateShortURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = CreateShortURL(m.NewDefHandlerConfig(us, nil))
+	fn = CreateShortURL(m.NewDefHandlerConfig(us, nil, nil))
 	fn(w, r)
 
 	res := w.Result()
@@ -68,7 +68,7 @@ func TestAPICreateShortURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = CreateShortURL(m.NewAPIHandlerConfig(us, nil))
+	fn = CreateShortURL(m.NewAPIHandlerConfig(us, nil, nil))
 	fn(w, r)
 
 	res := w.Result()
@@ -111,7 +111,7 @@ func TestRedirectToFullURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = RedirectToFullURL(m.NewDefHandlerConfig(us, nil))
+	fn = RedirectToFullURL(m.NewDefHandlerConfig(us, nil, nil))
 	fn(w, r)
 
 	res := w.Result()
