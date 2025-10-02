@@ -15,13 +15,25 @@ type URLStorage struct {
 	StorageName string `json:"StorageName,omitempty"`
 	BaseURL     string `json:"BaseAddr,omitempty"`
 	Storage     `json:"Storage,omitempty"`
+	*PgDB
+	UseDBEngine bool
 }
 
 func (us *URLStorage) ReturnShortURL(url string) string {
-	return us.updateStorage(url)
+	if us.UseDBEngine {
+		return us.returnPgDBShortURL(url)
+	}
+	return us.updateFileStorage(url)
 }
 
 func (us *URLStorage) ReturnFullURL(short string) string {
+	if us.UseDBEngine {
+		return us.returnPgDBFullURL(short)
+	}
+	return us.returnFileStorageFullURL(short)
+}
+
+func (us *URLStorage) returnFileStorageFullURL(short string) string {
 	if val, ok := us.Storage.GETStorage[short]; !ok {
 		return ""
 	} else {
@@ -29,7 +41,7 @@ func (us *URLStorage) ReturnFullURL(short string) string {
 	}
 }
 
-func (us *URLStorage) updateStorage(url string) string {
+func (us *URLStorage) updateFileStorage(url string) string {
 	if val, ok := us.Storage.POSTStorage[url]; !ok {
 		rs := us.randomString()
 		sha256 := us.sha256Sum(url + rs)
@@ -41,7 +53,7 @@ func (us *URLStorage) updateStorage(url string) string {
 	}
 }
 
-func (us *URLStorage) storageToByteA() ([]byte, error) {
+func (us *URLStorage) fileStorageToByteA() ([]byte, error) {
 	if b, err := json.Marshal(us.Storage); err != nil {
 		return nil, err
 	} else {
@@ -49,18 +61,19 @@ func (us *URLStorage) storageToByteA() ([]byte, error) {
 	}
 }
 
-func (us *URLStorage) SaveStorage(storageName string) error {
-	err := us.prepareStorageFile(storageName)
-	if err != nil {
-		return err
-	}
-	sData, err := us.storageToByteA()
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(storageName, sData, os.FileMode(0644))
-	if err != nil {
-		return err
+func (us *URLStorage) SaveFileStorage(storageName string) error {
+	if !us.UseDBEngine {
+		if err := us.prepareStorageFile(storageName); err != nil {
+			return err
+		}
+		sData, err := us.fileStorageToByteA()
+		if err != nil {
+			return err
+		}
+		if err = os.WriteFile(storageName, sData, os.FileMode(0644)); err != nil {
+			return err
+		}
+		return nil
 	}
 	return nil
 }
@@ -85,13 +98,13 @@ func (us *URLStorage) prepareStorageFile(storageName string) error {
 	return nil
 }
 
-func (us *URLStorage) ResetStorage(storageName, addr string) error {
+func (us *URLStorage) ResetFileStorage(storageName, addr string) error {
 	us.StorageName = storageName
 	us.BaseURL = addr
-	return us.loadStorage(storageName)
+	return us.loadFileStorage(storageName)
 }
 
-func (us *URLStorage) loadStorage(storageName string) error {
+func (us *URLStorage) loadFileStorage(storageName string) error {
 	err := us.prepareStorageFile(storageName)
 	if err != nil {
 		return err
@@ -117,12 +130,12 @@ func (us *URLStorage) randomString() string {
 	return common.GetRandomString(common.MinRndStrLen)
 }
 
-func NewURLStorage(storageName string) (*URLStorage, error) {
+func NewURLFileStorage(storageName string) (*URLStorage, error) {
 	us := &URLStorage{
 		StorageName: storageName,
 		Storage:     Storage{POSTStorage: make(map[string][]string), GETStorage: make(map[string][]string)},
 	}
-	err := us.loadStorage(storageName)
+	err := us.loadFileStorage(storageName)
 	return us, err
 }
 

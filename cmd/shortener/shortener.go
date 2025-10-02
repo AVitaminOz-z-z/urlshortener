@@ -21,7 +21,7 @@ func main() {
 
 	// save url-storage to file
 	defer func() {
-		_ = app.SaveURLStorage()
+		_ = app.SaveURLFileStorage()
 	}()
 
 	// notify os signals

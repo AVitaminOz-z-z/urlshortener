@@ -13,6 +13,12 @@ const (
 		"0123456789" // digits
 	MinRndStrLen  = 16
 	AppSrvVersion = "AVitaminOz-z-z HTTP-Server v0.3"
+	CtxWaitMinSec = 10
+	CtxWaitMaxSec = 30
+
+	MigrationPgUpFile   = "migrations/000001_ya_shortener_pgstorage.up.sql"
+	MigrationPgDownFile = "migrations/000001_ya_shortener_pgstorage.down.sql"
+	MigrationScriptSep  = "--$$--\n"
 )
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))

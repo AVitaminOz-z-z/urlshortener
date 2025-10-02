@@ -9,12 +9,9 @@ import (
 	"net/http"
 )
 
-/*func checkContentType(r *http.Request, hc *m.HandlerConfig) bool {
+/*
+func checkContentType(r *http.Request, hc *m.HandlerConfig) bool {
 	return (regexp.MustCompile(hc.AvailableContentTypeRgx)).MatchString(r.Header.Get("Content-Type"))
-}*/
-
-func writeDefaultHeader(w http.ResponseWriter, hc *m.HandlerConfig) {
-	w.Header().Set("Content-Type", hc.ContentType)
 }
 
 func writeBadRequest(w http.ResponseWriter, hc *m.HandlerConfig, ext string) {
@@ -27,6 +24,21 @@ func write5xx(w http.ResponseWriter, hc *m.HandlerConfig, ext string) {
 	writeDefaultHeader(w, hc)
 	hc.GetLogger().Error("Server Error", slog.String("Message", ext))
 	http.Error(w, fmt.Sprintf("Server Error (%s)", ext), http.StatusInternalServerError)
+}
+*/
+
+func writeDefaultHeader(w http.ResponseWriter, hc *m.HandlerConfig) {
+	w.Header().Set("Content-Type", hc.ContentType)
+}
+
+func writeError(w http.ResponseWriter, hc *m.HandlerConfig, ext string, code int) {
+	writeDefaultHeader(w, hc)
+	if code >= 500 {
+		hc.GetLogger().Error(http.StatusText(code), slog.String("Message", ext))
+	} else {
+		hc.GetLogger().Warn(http.StatusText(code), slog.String("Message", ext))
+	}
+	http.Error(w, fmt.Sprintf(http.StatusText(code)+" (%s)", ext), code)
 }
 
 func writeOK(w http.ResponseWriter, hc *m.HandlerConfig) {
@@ -70,7 +82,7 @@ func CreateShortURL(hc *m.HandlerConfig) http.HandlerFunc {
 			// body is empty or read error
 			body, err := io.ReadAll(r.Body)
 			if len(body) == 0 || err != nil {
-				writeBadRequest(w, hc, fmt.Sprintf("body is empty or read error <err = %v>", err))
+				writeError(w, hc, fmt.Sprintf("body is empty or read error <err = %v>", err), http.StatusBadRequest)
 				return
 			}
 			url = string(body)
@@ -78,12 +90,13 @@ func CreateShortURL(hc *m.HandlerConfig) http.HandlerFunc {
 			req := m.APIRequest{}
 			dec := json.NewDecoder(r.Body)
 			if err := dec.Decode(&req); err != nil {
-				writeBadRequest(w, hc, fmt.Sprintf("can't unmarshal request to struct: %v", err))
+				writeError(w, hc, fmt.Sprintf("can't unmarshal request to struct: %v", err), http.StatusBadRequest)
 				return
 			}
 			// req URL is empty
 			if req.URL == "" {
-				writeBadRequest(w, hc, "request URL is empty")
+				// writeBadRequest(w, hc, "request URL is empty")
+				writeError(w, hc, "request URL is empty", http.StatusBadRequest)
 				return
 			}
 			url = req.URL
@@ -104,7 +117,7 @@ func RedirectToFullURL(hc *m.HandlerConfig) http.HandlerFunc {
 		id := r.URL.Path[1:]
 		redirectURL := hc.GetStorage().ReturnFullURL(id)
 		if redirectURL == "" {
-			writeBadRequest(w, hc, fmt.Sprintf("unmanaged short url by {id} = %s", id))
+			writeError(w, hc, fmt.Sprintf("unmanaged short url by {id} = %s", id), http.StatusBadRequest)
 			return
 		}
 		writeFullURL(w, hc, redirectURL)
@@ -113,8 +126,13 @@ func RedirectToFullURL(hc *m.HandlerConfig) http.HandlerFunc {
 
 func PingPgDB(hc *m.HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if hc.GetPgDB() == nil {
+			writeError(w, hc, fmt.Sprintf("PgDB-engine not defined"), http.StatusInternalServerError)
+			return
+		}
 		if err := hc.GetPgDB().Ping(); err != nil {
-			write5xx(w, hc, err.Error())
+			writeError(w, hc, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		writeOK(w, hc)
 	}

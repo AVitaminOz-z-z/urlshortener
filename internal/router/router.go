@@ -11,11 +11,11 @@ import (
 	"log/slog"
 )
 
-func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger, pgDB *storage.PgDB) chi.Router {
+func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger) chi.Router {
 	// Default handler config
-	hcDef := m.NewDefHandlerConfig(storage, logger, pgDB)
+	hcDef := m.NewDefHandlerConfig(storage, logger)
 	// API handler config
-	hcAPI := m.NewAPIHandlerConfig(storage, logger, pgDB)
+	hcAPI := m.NewAPIHandlerConfig(storage, logger)
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(mwLogger.NewMiddlewareLogger(logger))

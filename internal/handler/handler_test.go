@@ -17,7 +17,7 @@ func TestCreateShortURL(t *testing.T) {
 		TestURL      = "https://yandex.ru"
 	)
 
-	us, _ := storage.NewURLStorage("./.test_storage")
+	us, _ := storage.NewURLFileStorage("./.test_storage")
 	us.SetBaseURL("http://localhost:8080")
 	var fn http.HandlerFunc
 
@@ -26,7 +26,7 @@ func TestCreateShortURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = CreateShortURL(m.NewDefHandlerConfig(us, nil, nil))
+	fn = CreateShortURL(m.NewDefHandlerConfig(us, nil))
 	fn(w, r)
 
 	res := w.Result()
@@ -59,7 +59,7 @@ func TestAPICreateShortURL(t *testing.T) {
 		TestURL      = "{\"url\":\"https://yandex.ru\"}"
 	)
 
-	us, _ := storage.NewURLStorage("./.test_storage")
+	us, _ := storage.NewURLFileStorage("./.test_storage")
 	us.SetBaseURL("http://localhost:8080")
 	var fn http.HandlerFunc
 
@@ -68,7 +68,7 @@ func TestAPICreateShortURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = CreateShortURL(m.NewAPIHandlerConfig(us, nil, nil))
+	fn = CreateShortURL(m.NewAPIHandlerConfig(us, nil))
 	fn(w, r)
 
 	res := w.Result()
@@ -101,7 +101,7 @@ func TestRedirectToFullURL(t *testing.T) {
 		TargetPath   = "/249110f758ff4d188b124b94787b758a93539865f89609bfdf681fea588b6fba"
 	)
 
-	us, _ := storage.NewURLStorage("./.test_storage")
+	us, _ := storage.NewURLFileStorage("./.test_storage")
 	us.SetBaseURL("http://localhost:8080")
 	var fn http.HandlerFunc
 
@@ -111,7 +111,7 @@ func TestRedirectToFullURL(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	fn = RedirectToFullURL(m.NewDefHandlerConfig(us, nil, nil))
+	fn = RedirectToFullURL(m.NewDefHandlerConfig(us, nil))
 	fn(w, r)
 
 	res := w.Result()
