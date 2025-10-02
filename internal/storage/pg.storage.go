@@ -60,8 +60,8 @@ func (us *URLStorage) initDB() error {
 
 func (us *URLStorage) SetPgDB(dsn string) error {
 	// setting up DB-engine
-	// dbType := strings.Split(dsn, ":")[0]
-	pgDB, err := NewPgDB("postgres", dsn)
+	dbType := strings.Split(dsn, ":")[0]
+	pgDB, err := NewPgDB(dbType, dsn)
 	if err != nil {
 		return err
 	}

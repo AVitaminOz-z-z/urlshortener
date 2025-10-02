@@ -1,27 +1,21 @@
--- storage
-drop table if exists storage;
---$$--
 create table if not exists storage (
-    id          bigserial,
-    url         text,
-    short_url   text,
-    rand        text
+   id          bigserial,
+   url         text,
+   short_url   text,
+   rand        text
 );
 --$$--
-alter table storage add constraint pk__storage__id primary key (id);
+alter table storage drop constraint if exists pk__storage__id;
 --$$--
 create unique index if not exists ux__storage__short_url on storage(short_url);
 --$$--
 create unique index if not exists ux__storage__url on storage(url);
 --$$--
-
--- fn__load_from_file_storage
 drop function if exists fn__load_from_file_storage;
 --$$--
-create or replace function fn__load_from_file_storage(fs_data jsonb) returns bigint as $$
+create or replace function fn__load_from_file_storage(fs_data jsonb) returns void as $$
 declare
     fs_key  text    = 'POSTStorage';
-    d_rc    bigint  = 0;
 begin
     with data as (
         select fs_data -> fs_key as json
@@ -30,15 +24,12 @@ begin
     insert into storage (url, short_url, rand)
     select f_url, (json -> f_url ->> 0), (json -> f_url ->> 1) from keys
     on conflict (short_url) do nothing;
-    get diagnostics d_rc = ROW_COUNT;
-    return d_rc;
+    return;
 end
 $$ language plpgsql;
 --$$--
 grant execute on function fn__load_from_file_storage(jsonb) to public;
 --$$--
-
--- fn__gen_random_string
 drop function if exists fn__gen_random_string;
 --$$--
 create or replace function fn__gen_random_string (max_len int) returns text as $$
@@ -52,8 +43,6 @@ $$ language plpgsql;
 --$$--
 grant execute on function fn__gen_random_string(int) to public;
 --$$--
-
--- fn__insert_short_url
 drop function if exists fn__insert_short_url;
 --$$--
 create or replace function fn__insert_short_url(full_url text) returns text as $$
@@ -72,8 +61,6 @@ $$ language plpgsql;
 --$$--
 grant execute on function fn__insert_short_url(text) to public;
 --$$--
-
--- fn__return_short_url
 drop function if exists fn__return_short_url;
 --$$--
 create or replace function fn__return_short_url(full_url text) returns text as $$
@@ -84,8 +71,6 @@ $$ language plpgsql;
 --$$--
 grant execute on function fn__return_short_url(text) to public;
 --$$--
-
--- fn__return_full_url
 drop function if exists fn__return_full_url;
 --$$--
 create or replace function fn__return_full_url(short text) returns text as $$
