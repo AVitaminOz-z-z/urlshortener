@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/common"
 	_ "github.com/lib/pq"
-	"os"
 	"strings"
 	"time"
 )
@@ -34,17 +33,23 @@ func (us *URLStorage) getPgDB() *PgDB {
 }
 
 func (us *URLStorage) initDB() error {
-	// loading migration file
-	data, err := os.ReadFile(common.MigrationPgUpFile)
+
+	/*data, err := os.ReadFile(common.MigrationPgUpFile)
 	if err != nil {
 		return err
-	}
-	parts := strings.Split(string(data), common.MigrationScriptSep)
+	}*/
+
+	// loading migration script
+	script := common.MigrationScriptUp
+
+	// getting parts
+	parts := strings.Split(script, common.MigrationScriptSep)
 
 	ctx, cancel := context.WithTimeout(context.Background(), common.CtxWaitMaxSec*time.Second)
 	defer cancel()
 
 	// running migration steps
+	var err error
 	db := us.getPgDB()
 	for _, s := range parts {
 		if _, err = db.ExecContext(ctx, s); err != nil {

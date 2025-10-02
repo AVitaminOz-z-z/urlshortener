@@ -38,7 +38,7 @@ func writeError(w http.ResponseWriter, hc *m.HandlerConfig, ext string, code int
 	} else {
 		hc.GetLogger().Warn(http.StatusText(code), slog.String("Message", ext))
 	}
-	http.Error(w, fmt.Sprintf(http.StatusText(code)+" (%s)", ext), code)
+	http.Error(w, fmt.Sprintf("%s (%s)", http.StatusText(code), ext), code)
 }
 
 func writeOK(w http.ResponseWriter, hc *m.HandlerConfig) {
