@@ -31,7 +31,7 @@ func main() {
 	// run application
 	log := app.GetLogger()
 	go func() {
-		log.Info(fmt.Sprintf("%s started on %v", common.AppSrvVersion, app.GetServerAddr()))
+		log.Info(fmt.Sprintf("%s started on %v {DB-Engine: %v}", common.AppSrvVersion, app.GetServerAddr(), app.AppStorage.UseDBEngine))
 		if err := app.OnAir(); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)

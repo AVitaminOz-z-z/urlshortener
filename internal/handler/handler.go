@@ -127,7 +127,7 @@ func RedirectToFullURL(hc *m.HandlerConfig) http.HandlerFunc {
 func PingPgDB(hc *m.HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if hc.GetPgDB() == nil {
-			writeError(w, hc, fmt.Sprintf("PgDB-engine not defined"), http.StatusInternalServerError)
+			writeError(w, hc, "PgDB-engine not defined", http.StatusInternalServerError)
 			return
 		}
 		if err := hc.GetPgDB().Ping(); err != nil {
