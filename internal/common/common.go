@@ -17,7 +17,8 @@ const (
 	CtxWaitMaxSec = 30
 
 	// MigrationScriptSep
-	// MigrationPgUpFile   = "migrations/000001_ya_shortener_pgstorage.up.sql"
+
+	MigrationPgUpFile = "migrations/000001_ya_shortener_pgstorage.up.sql"
 	// MigrationPgDownFile = "migrations/000001_ya_shortener_pgstorage.down.sql"
 
 	MigrationScriptSep = "--$$--\n"
@@ -30,6 +31,8 @@ create table if not exists storage (
 );
 --$$--
 alter table storage drop constraint if exists pk__storage__id;
+--$$--
+alter table storage add constraint pk__storage__id primary key (id);
 --$$--
 create unique index if not exists ux__storage__short_url on storage(short_url);
 --$$--

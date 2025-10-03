@@ -7,6 +7,8 @@ create table if not exists storage (
 --$$--
 alter table storage drop constraint if exists pk__storage__id;
 --$$--
+alter table storage add constraint pk__storage__id primary key (id);
+--$$--
 create unique index if not exists ux__storage__short_url on storage(short_url);
 --$$--
 create unique index if not exists ux__storage__url on storage(url);

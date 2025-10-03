@@ -33,6 +33,10 @@ func (a *AppServer) setEnv() error {
 	return nil
 }
 
+func (a *AppServer) Close() error {
+	return a.SaveURLStorage()
+}
+
 func (a *AppServer) setPgDB(dsn string) error {
 	return a.AppStorage.SetPgDB(dsn)
 }
@@ -83,8 +87,8 @@ func (a *AppServer) getURLStorage() *storage.URLStorage {
 	return a.AppStorage
 }
 
-func (a *AppServer) SaveURLFileStorage() error {
-	return a.getURLStorage().SaveFileStorage(a.getURLStorageName())
+func (a *AppServer) SaveURLStorage() error {
+	return a.getURLStorage().SaveStorage(a.getURLStorageName())
 }
 
 func (a *AppServer) getAppEnv() *config.AppEnv {
@@ -110,8 +114,6 @@ func (a *AppServer) getOSArgs(env *config.AppEnv) *config.AppArgs {
 }
 
 func (a *AppServer) resetAppArgs(args *config.AppArgs) error {
-	//var err error
-
 	// no args
 	if args.ArgsLen == 0 {
 		return nil

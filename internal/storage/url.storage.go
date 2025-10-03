@@ -61,7 +61,7 @@ func (us *URLStorage) fileStorageToByteA() ([]byte, error) {
 	}
 }
 
-func (us *URLStorage) SaveFileStorage(storageName string) error {
+func (us *URLStorage) SaveStorage(storageName string) error {
 	if !us.UseDBEngine {
 		if err := us.prepareStorageFile(storageName); err != nil {
 			return err
@@ -75,7 +75,7 @@ func (us *URLStorage) SaveFileStorage(storageName string) error {
 		}
 		return nil
 	}
-	return nil
+	return us.PgDB.Close()
 }
 
 func (us *URLStorage) prepareStorageFile(storageName string) error {
