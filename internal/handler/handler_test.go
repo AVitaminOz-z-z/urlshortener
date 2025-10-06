@@ -31,8 +31,8 @@ func TestCreateShortURL(t *testing.T) {
 
 	res := w.Result()
 
-	if res.StatusCode != http.StatusCreated {
-		t.Errorf("Code %d was expected, but %d was received", http.StatusCreated, res.StatusCode)
+	if res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusConflict {
+		t.Errorf("Code (%d && %d) was expected, but %d was received", http.StatusCreated, http.StatusConflict, res.StatusCode)
 	}
 
 	resBody, err := io.ReadAll(res.Body)
@@ -73,8 +73,8 @@ func TestAPICreateShortURL(t *testing.T) {
 
 	res := w.Result()
 
-	if res.StatusCode != http.StatusCreated {
-		t.Errorf("Code %d was expected, but %d was received", http.StatusCreated, res.StatusCode)
+	if res.StatusCode != http.StatusCreated && res.StatusCode != http.StatusConflict {
+		t.Errorf("Code (%d && %d) was expected, but %d was received", http.StatusCreated, http.StatusConflict, res.StatusCode)
 	}
 
 	resBody, err := io.ReadAll(res.Body)

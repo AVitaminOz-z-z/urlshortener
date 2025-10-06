@@ -31,13 +31,13 @@ func (us *URLStorage) updateFileStorage(url string) string {
 */
 
 type APIBatchRequest struct {
-	CorrelationId string `json:"correlation_id,omitempty"`
+	CorrelationID string `json:"correlation_id,omitempty"`
 	OriginalURL   string `json:"original_url,omitempty"`
 }
 type APIBatchRequestA []APIBatchRequest
 
 type APIBatchResponse struct {
-	CorrelationId string `json:"correlation_id,omitempty"`
+	CorrelationID string `json:"correlation_id,omitempty"`
 	ShortURL      string `json:"short_url,omitempty"`
 }
 type APIBatchResponseA []APIBatchResponse
