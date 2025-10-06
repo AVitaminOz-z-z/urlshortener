@@ -26,5 +26,6 @@ func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger) chi.Router {
 	r.Get("/ping", handler.PingPgDB(hcDef))
 	r.Post("/", handler.CreateShortURL(hcDef))
 	r.Post("/api/shorten", handler.CreateShortURL(hcAPI))
+	r.Post("/api/shorten/batch", handler.CreateBatchShortURL(hcAPI))
 	return r
 }

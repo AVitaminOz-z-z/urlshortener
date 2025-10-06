@@ -1,3 +1,4 @@
+--drop table if exists storage;--$$--;
 create table if not exists storage (
    id          bigserial,
    url         text,
@@ -84,3 +85,53 @@ end
 $$ language plpgsql;
 --$$--
 grant execute on function fn__return_full_url(text) to public;
+--$$--
+drop function if exists fn__insert_short_url_v2;
+--$$--
+create or replace function fn__insert_short_url_v2(full_url text) returns jsonb as $$
+declare
+    max_len   int  = 16;
+    rnd_seed  text = fn__gen_random_string(max_len);
+    -- default http-code (http.StatusCreated)
+    http_code int  = 201;
+begin
+    if not exists(select short_url from storage where url = full_url) then
+        insert into storage (url, short_url, rand)
+        select full_url, encode(sha256((full_url || rnd_seed)::bytea), 'hex'), rnd_seed
+        on conflict (url) do nothing;
+        -- short-url already exists (http.StatusConflict)
+    else http_code = 409;
+    end if;
+    return (select to_jsonb(t.*) from (select short_url, http_code from storage where url = full_url)t);
+end
+$$ language plpgsql;
+--$$--
+grant execute on function fn__insert_short_url_v2(text) to public;
+--$$--
+drop function if exists fn__return_short_url_v2;
+--$$--
+create or replace function fn__return_short_url_v2(full_url text) returns jsonb as $$
+begin
+    return fn__insert_short_url_v2(full_url);
+end
+$$ language plpgsql;
+--$$--
+grant execute on function fn__return_short_url_v2(text) to public;
+--$$--
+drop function if exists fn__return_batch_short_urls;
+--$$--
+create or replace function fn__return_batch_short_urls(batch jsonb, prefix text default '') returns jsonb as $$
+begin
+    return (
+            select to_jsonb(array_agg(t1.*))
+            from (select t.correlation_id, prefix || fn__return_short_url(t.original_url) as short_url
+                  from  jsonb_to_recordset(batch)
+                   as t(
+                       "correlation_id" text,
+                       "original_url" text
+                       ))t1
+           );
+end
+$$ language plpgsql;
+--$$--
+grant execute on function fn__return_batch_short_urls(jsonb, text) to public;

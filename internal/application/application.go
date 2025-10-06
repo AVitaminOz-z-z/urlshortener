@@ -1,6 +1,7 @@
 package application
 
 import (
+	"context"
 	"flag"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/config"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/logger"
@@ -37,8 +38,8 @@ func (a *AppServer) Close() error {
 	return a.SaveURLStorage()
 }
 
-func (a *AppServer) setPgDB(dsn string) error {
-	return a.AppStorage.SetPgDB(dsn)
+func (a *AppServer) setPgDB(ctx context.Context, dsn string) error {
+	return a.AppStorage.SetPgDB(ctx, dsn)
 }
 
 func (a *AppServer) setFileStorage(name string) error {
@@ -113,7 +114,7 @@ func (a *AppServer) getOSArgs(env *config.AppEnv) *config.AppArgs {
 	return pAppArgs
 }
 
-func (a *AppServer) resetAppArgs(args *config.AppArgs) error {
+func (a *AppServer) resetAppArgs(ctx context.Context, args *config.AppArgs) error {
 	// no args
 	if args.ArgsLen == 0 {
 		return nil
@@ -127,12 +128,15 @@ func (a *AppServer) resetAppArgs(args *config.AppArgs) error {
 	}
 
 	// reset DB-engine
-	_ = a.setPgDB(a.getPgDSN())
+	_ = a.setPgDB(ctx, a.getPgDSN())
 
 	return nil
 }
 
 func (a *AppServer) PrepareApp() error {
+	// main context
+	ctx := context.Background()
+
 	// loading environment
 	if err := a.setEnv(); err != nil {
 		return err
@@ -144,13 +148,13 @@ func (a *AppServer) PrepareApp() error {
 	}
 
 	// creating database engine
-	_ = a.setPgDB(a.getPgDSN())
+	_ = a.setPgDB(ctx, a.getPgDSN())
 
 	// creating logger
 	a.setLogger(os.Stdout)
 
 	// reset App-args via OS-args
-	if err := a.resetAppArgs(a.getOSArgs(a.getAppEnv())); err != nil {
+	if err := a.resetAppArgs(ctx, a.getOSArgs(a.getAppEnv())); err != nil {
 		return err
 	}
 
