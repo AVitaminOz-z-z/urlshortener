@@ -18,10 +18,17 @@ const (
 
 	// MigrationScriptSep
 
-	MigrationPgUpFile = "migrations/000001_ya_shortener_pgstorage.up.sql"
-	// MigrationPgDownFile = "migrations/000001_ya_shortener_pgstorage.down.sql"
+	MigrationPgUpFile   = "migrations/000001_ya_shortener_pgstorage.up.sql"
+	MigrationPgDownFile = "migrations/000001_ya_shortener_pgstorage.down.sql"
 
 	MigrationScriptSep = "--$$--\n"
+)
+
+const (
+	DefAvailableContentTypeRgx = `^text/plain(|.+)$`
+	APIAvailableContentTypeRgx = `^application/json(|.+)$`
+	DefContentType             = "text/plain; charset=utf-8"
+	APIContentType             = "application/json"
 )
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))

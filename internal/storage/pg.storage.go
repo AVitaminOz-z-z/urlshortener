@@ -5,24 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/common"
+	m "github.com/AVitaminOz-z-z/urlshortener.git/internal/model"
 	_ "github.com/lib/pq"
 	"os"
 	"strings"
 	"time"
 )
-
-/*
-func (us *URLStorage) returnPgDBShortURL(ctx context.Context, url string) string {
-	db := us.getPgDB()
-	row := db.QueryRowContext(ctx, "select fn__return_short_url($1);", url)
-	short := new(string)
-	if err := row.Scan(short); err != nil {
-		panic(err)
-	}
-	return *short
-
-}
-*/
 
 type PgDB struct {
 	*sql.DB
@@ -43,8 +31,8 @@ func (pdb *PgDB) Ping() error {
 	return pdb.DB.Ping()
 }
 
-func (us *URLStorage) byteAToAPIShorURL(b []byte) (*APIShorURL, error) {
-	apiSU := &APIShorURL{}
+func (us *URLStorage) byteAToAPIShorURL(b []byte) (*m.APIShorURL, error) {
+	apiSU := &m.APIShorURL{}
 	err := json.Unmarshal(b, apiSU)
 	if err != nil {
 		return nil, err
@@ -104,25 +92,15 @@ func (us *URLStorage) SetPgDB(ctx context.Context, dsn string) error {
 	return nil
 }
 
-func (us *URLStorage) returnPgDBShortURL(ctx context.Context, url string) []byte {
+func (us *URLStorage) returnPgDBShortURL(ctx context.Context, url string, prefix string) []byte {
 	db := us.getPgDB()
-	row := db.QueryRowContext(ctx, "select fn__return_short_url_v2($1);", url)
+	row := db.QueryRowContext(ctx, "select fn__return_short_url_v2($1, $2);", url, prefix)
 	short := new([]byte)
 	if err := row.Scan(short); err != nil {
 		panic(err)
 	}
 	return *short
 
-}
-
-func (us *URLStorage) returnPgDBFullURL(ctx context.Context, short string) string {
-	db := us.getPgDB()
-	row := db.QueryRowContext(ctx, "select fn__return_full_url($1);", short)
-	url := new(string)
-	if err := row.Scan(url); err != nil {
-		panic(err)
-	}
-	return *url
 }
 
 func (us *URLStorage) returnPgDBBatchShortURLs(ctx context.Context, batch []byte, prefix string) []byte {
@@ -133,4 +111,14 @@ func (us *URLStorage) returnPgDBBatchShortURLs(ctx context.Context, batch []byte
 		panic(err)
 	}
 	return *batchShorts
+}
+
+func (us *URLStorage) returnPgDBFullURL(ctx context.Context, short string) string {
+	db := us.getPgDB()
+	row := db.QueryRowContext(ctx, "select fn__return_full_url($1);", short)
+	url := new(string)
+	if err := row.Scan(url); err != nil {
+		panic(err)
+	}
+	return *url
 }

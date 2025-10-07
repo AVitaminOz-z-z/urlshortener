@@ -4,7 +4,6 @@ import (
 	mwCompress "github.com/AVitaminOz-z-z/urlshortener.git/internal/compress"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/handler"
 	mwLogger "github.com/AVitaminOz-z-z/urlshortener.git/internal/logger"
-	m "github.com/AVitaminOz-z-z/urlshortener.git/internal/model"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -13,9 +12,9 @@ import (
 
 func NewURLRouter(storage *storage.URLStorage, logger *slog.Logger) chi.Router {
 	// Default handler config
-	hcDef := m.NewDefHandlerConfig(storage, logger)
+	hcDef := handler.NewDefHandlerConfig(storage, logger)
 	// API handler config
-	hcAPI := m.NewAPIHandlerConfig(storage, logger)
+	hcAPI := handler.NewAPIHandlerConfig(storage, logger)
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(mwLogger.NewMiddlewareLogger(logger))

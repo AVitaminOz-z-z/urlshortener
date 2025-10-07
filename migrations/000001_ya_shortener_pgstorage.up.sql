@@ -88,7 +88,7 @@ grant execute on function fn__return_full_url(text) to public;
 --$$--
 drop function if exists fn__insert_short_url_v2;
 --$$--
-create or replace function fn__insert_short_url_v2(full_url text) returns jsonb as $$
+create or replace function fn__insert_short_url_v2(full_url text, prefix text default '') returns jsonb as $$
 declare
     max_len   int  = 16;
     rnd_seed  text = fn__gen_random_string(max_len);
@@ -102,21 +102,21 @@ begin
         -- short-url already exists (http.StatusConflict)
     else http_code = 409;
     end if;
-    return (select to_jsonb(t.*) from (select short_url, http_code from storage where url = full_url)t);
+    return (select to_jsonb(t.*) from (select prefix || short_url as short_url, http_code from storage where url = full_url)t);
 end
 $$ language plpgsql;
 --$$--
-grant execute on function fn__insert_short_url_v2(text) to public;
+grant execute on function fn__insert_short_url_v2(text, text) to public;
 --$$--
 drop function if exists fn__return_short_url_v2;
 --$$--
-create or replace function fn__return_short_url_v2(full_url text) returns jsonb as $$
+create or replace function fn__return_short_url_v2(full_url text, prefix text default '') returns jsonb as $$
 begin
-    return fn__insert_short_url_v2(full_url);
+    return fn__insert_short_url_v2(full_url, prefix);
 end
 $$ language plpgsql;
 --$$--
-grant execute on function fn__return_short_url_v2(text) to public;
+grant execute on function fn__return_short_url_v2(text, text) to public;
 --$$--
 drop function if exists fn__return_batch_short_urls;
 --$$--

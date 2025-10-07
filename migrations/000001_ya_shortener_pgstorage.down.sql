@@ -9,3 +9,9 @@ drop function if exists fn__insert_short_url;
 drop function if exists fn__return_short_url;
 --$$--
 drop function if exists fn__return_full_url;
+--$$--
+drop function if exists fn__insert_short_url_v2;
+--$$--
+drop function if exists fn__return_short_url_v2;
+--$$--
+drop function if exists fn__return_batch_short_urls;

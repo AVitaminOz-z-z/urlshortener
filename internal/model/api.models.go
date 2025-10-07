@@ -1,18 +1,26 @@
 package model
 
-import (
-	"github.com/AVitaminOz-z-z/urlshortener.git/internal/storage"
-	"log/slog"
-)
+type APIBatchRequest struct {
+	CorrelationID string `json:"correlation_id,omitempty"`
+	OriginalURL   string `json:"original_url,omitempty"`
+}
+type APIBatchRequestA []APIBatchRequest
 
-const (
-	DefAvailableContentTypeRgx = `^text/plain(|.+)$`
-	APIAvailableContentTypeRgx = `^application/json(|.+)$`
-	DefContentType             = "text/plain; charset=utf-8"
-	APIContentType             = "application/json"
-)
+type APIBatchResponse struct {
+	CorrelationID string `json:"correlation_id,omitempty"`
+	ShortURL      string `json:"short_url,omitempty"`
+}
+type APIBatchResponseA []APIBatchResponse
 
-// API request & response
+type APIShorURL struct {
+	HTTPCode int    `json:"http_code,omitempty"`
+	ShortURL string `json:"short_url,omitempty"`
+}
+
+type APIBatchShorURLs struct {
+	HTTPCode int `json:"http_code,omitempty"`
+	APIBatchResponseA
+}
 
 type APIRequest struct {
 	URL string `json:"url,omitempty"`
@@ -20,53 +28,4 @@ type APIRequest struct {
 
 type APIResult struct {
 	Result string `json:"result,omitempty"`
-}
-
-// handler config
-
-type HandlerDefaults struct {
-	ContentType             string
-	AvailableContentTypeRgx string
-}
-
-type HandlerConfig struct {
-	storage *storage.URLStorage
-	logger  *slog.Logger
-	*HandlerDefaults
-}
-
-func (hc *HandlerConfig) GetStorage() *storage.URLStorage {
-	return hc.storage
-}
-
-func (hc *HandlerConfig) GetPgDB() *storage.PgDB {
-	return hc.storage.PgDB
-}
-
-func (hc *HandlerConfig) GetLogger() *slog.Logger {
-	return hc.logger
-}
-
-func (hc *HandlerConfig) ResetLogger(l *slog.Logger) {
-	hc.logger = l
-}
-
-func NewDefHandlerConfig(storage *storage.URLStorage, logger *slog.Logger) *HandlerConfig {
-	return &HandlerConfig{
-		storage: storage,
-		logger:  logger,
-		HandlerDefaults: &HandlerDefaults{
-			ContentType:             DefContentType,
-			AvailableContentTypeRgx: DefAvailableContentTypeRgx,
-		},
-	}
-}
-
-func NewAPIHandlerConfig(storage *storage.URLStorage, logger *slog.Logger) *HandlerConfig {
-	hc := NewDefHandlerConfig(storage, logger)
-	hc.HandlerDefaults = &HandlerDefaults{
-		ContentType:             APIContentType,
-		AvailableContentTypeRgx: APIAvailableContentTypeRgx,
-	}
-	return hc
 }

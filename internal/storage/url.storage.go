@@ -3,55 +3,11 @@ package storage
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/common"
+	m "github.com/AVitaminOz-z-z/urlshortener.git/internal/model"
 	"net/http"
 	"os"
 )
-
-/*
-func (us *URLStorage) ReturnShortURL(ctx context.Context, url string) string {
-	if us.UseDBEngine {
-		return us.returnPgDBShortURL(ctx, url)
-	}
-	return us.updateFileStorage(url)
-}
-
-func (us *URLStorage) updateFileStorage(url string) string {
-	if val, ok := us.Storage.POSTStorage[url]; !ok {
-		rs := us.randomString()
-		sha256 := us.sha256Sum(url + rs)
-		us.Storage.POSTStorage[url] = []string{sha256, rs}
-		us.Storage.GETStorage[sha256] = []string{url, rs}
-		return sha256
-	} else {
-		return val[0]
-	}
-}
-*/
-
-type APIBatchRequest struct {
-	CorrelationID string `json:"correlation_id,omitempty"`
-	OriginalURL   string `json:"original_url,omitempty"`
-}
-type APIBatchRequestA []APIBatchRequest
-
-type APIBatchResponse struct {
-	CorrelationID string `json:"correlation_id,omitempty"`
-	ShortURL      string `json:"short_url,omitempty"`
-}
-type APIBatchResponseA []APIBatchResponse
-
-type APIShorURL struct {
-	HTTPCode int    `json:"http_code,omitempty"`
-	ShortURL string `json:"short_url,omitempty"`
-	BaseURL  string `json:"base_url,omitempty"`
-}
-
-type APIBatchShorURLs struct {
-	HTTPCode int `json:"http_code,omitempty"`
-	APIBatchResponseA
-}
 
 type Storage struct {
 	POSTStorage map[string][]string `json:"POSTStorage,omitempty"`
@@ -66,39 +22,65 @@ type URLStorage struct {
 	UseDBEngine bool
 }
 
-func (us *URLStorage) ReturnShortURL(ctx context.Context, url string) (*APIShorURL, error) {
+func (us *URLStorage) ReturnShortURL(ctx context.Context, url string) (*m.APIShorURL, error) {
+	prefix := us.BaseURL + "/"
 	if us.UseDBEngine {
-		b := us.returnPgDBShortURL(ctx, url)
+		b := us.returnPgDBShortURL(ctx, url, prefix)
 		apiSU, err := us.byteAToAPIShorURL(b)
 		if err != nil {
 			return nil, err
 		}
-		apiSU.BaseURL = us.BaseURL
 		return apiSU, nil
 	}
-	return us.updateFileStorage(url), nil
+	return us.returnFileStorageShortURL(url, prefix), nil
 }
 
-func (us *URLStorage) ReturnBatchShortURL(ctx context.Context, batch APIBatchRequestA) (*APIBatchShorURLs, error) {
+func (us *URLStorage) ReturnBatchShortURL(ctx context.Context, batch m.APIBatchRequestA) (*m.APIBatchShorURLs, error) {
+	prefix := us.BaseURL + "/"
 	if us.UseDBEngine {
 		batchBytes, err := json.Marshal(batch)
 		if err != nil {
 			return nil, err
 		}
-
-		respBytes := us.returnPgDBBatchShortURLs(ctx, batchBytes, us.BaseURL+"/")
-		batchResponse := APIBatchResponseA{}
+		respBytes := us.returnPgDBBatchShortURLs(ctx, batchBytes, prefix)
+		batchResponse := m.APIBatchResponseA{}
 		err = json.Unmarshal(respBytes, &batchResponse)
 		if err != nil {
 			return nil, err
 		}
-
-		return &APIBatchShorURLs{
-			http.StatusCreated,
-			batchResponse,
+		return &m.APIBatchShorURLs{
+			HTTPCode:          http.StatusCreated,
+			APIBatchResponseA: batchResponse,
 		}, nil
 	}
-	return nil, errors.New("unsupported storage engine")
+	return us.returnFileStorageBatchShortURLs(batch, prefix)
+}
+
+func (us *URLStorage) returnFileStorageURL(url string, prefix string) (string, bool) {
+	if val, ok := us.Storage.POSTStorage[url]; !ok {
+		rs := us.randomString()
+		sha256 := us.sha256Sum(url + rs)
+		us.Storage.POSTStorage[url] = []string{sha256, rs}
+		us.Storage.GETStorage[sha256] = []string{url, rs}
+		return prefix + sha256, ok
+	} else {
+		return prefix + val[0], ok
+	}
+}
+
+func (us *URLStorage) returnFileStorageBatchShortURLs(batch m.APIBatchRequestA, prefix string) (*m.APIBatchShorURLs, error) {
+	batchResponseA := make(m.APIBatchResponseA, len(batch))
+	batchShorURLs := &m.APIBatchShorURLs{
+		HTTPCode:          http.StatusCreated,
+		APIBatchResponseA: batchResponseA,
+	}
+	for i, v := range batch {
+		batchResponseA[i].CorrelationID = v.CorrelationID
+		sURL, _ := us.returnFileStorageURL(v.OriginalURL, prefix)
+		batchResponseA[i].ShortURL = sURL
+
+	}
+	return batchShorURLs, nil
 }
 
 func (us *URLStorage) ReturnFullURL(ctx context.Context, short string) string {
@@ -116,25 +98,15 @@ func (us *URLStorage) returnFileStorageFullURL(short string) string {
 	}
 }
 
-func (us *URLStorage) updateFileStorage(url string) *APIShorURL {
-	// http.StatusCreated
-	if val, ok := us.Storage.POSTStorage[url]; !ok {
-		rs := us.randomString()
-		sha256 := us.sha256Sum(url + rs)
-		us.Storage.POSTStorage[url] = []string{sha256, rs}
-		us.Storage.GETStorage[sha256] = []string{url, rs}
-		return &APIShorURL{
-			HTTPCode: http.StatusCreated,
-			ShortURL: sha256,
-			BaseURL:  us.BaseURL,
-		}
-	} else {
-		// http.StatusConflict
-		return &APIShorURL{
-			HTTPCode: http.StatusConflict,
-			ShortURL: val[0],
-			BaseURL:  us.BaseURL,
-		}
+func (us *URLStorage) returnFileStorageShortURL(url string, prefix string) *m.APIShorURL {
+	short, exists := us.returnFileStorageURL(url, prefix)
+	httpCode := http.StatusCreated
+	if exists {
+		httpCode = http.StatusConflict
+	}
+	return &m.APIShorURL{
+		HTTPCode: httpCode,
+		ShortURL: short,
 	}
 }
 
