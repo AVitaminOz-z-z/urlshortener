@@ -102,3 +102,21 @@ end
 $$ language plpgsql;
 --$$--
 grant execute on function fn__return_short_url_on_conflict(text, text) to public;
+--$$--
+drop function if exists fn__return_batch_short_urls;
+--$$--
+create or replace function fn__return_batch_short_urls(batch jsonb, prefix text default '') returns jsonb as $$
+begin
+    return (
+        select to_jsonb(array_agg(t1.*))
+        from (select t.correlation_id, prefix || fn__return_short_url(t.original_url) as short_url
+              from  jsonb_to_recordset(batch)
+                        as t(
+                             "correlation_id" text,
+                             "original_url" text
+                      ))t1
+    );
+end
+$$ language plpgsql;
+--$$--
+grant execute on function fn__return_batch_short_urls(jsonb, text) to public;
