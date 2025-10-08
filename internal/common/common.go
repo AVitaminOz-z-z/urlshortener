@@ -2,8 +2,10 @@ package common
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"time"
 )
 
@@ -32,6 +34,8 @@ const (
 )
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+var ErrStatusConflict = errors.New(http.StatusText(http.StatusConflict))
 
 func StringWithCharset(length int, charset string) string {
 	b := make([]byte, length)

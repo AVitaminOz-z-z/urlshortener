@@ -27,3 +27,4 @@ tmp*
 shortenertestbeta
 runtests
 migrations/migration_up_v2.sql
+migrations/000001_ya_shortener_pgstorage.up.old.sql

@@ -14,4 +14,12 @@ drop function if exists fn__insert_short_url_v2;
 --$$--
 drop function if exists fn__return_short_url_v2;
 --$$--
+drop function if exists fn__insert_short_url_v3;
+--$$--
+drop function if exists fn__return_short_url_v3;
+--$$--
 drop function if exists fn__return_batch_short_urls;
+--$$--
+drop function if exists fn__insert_short_url_on_conflict;
+--$$--
+drop function if exists fn__return_short_url_on_conflict;

@@ -1,4 +1,4 @@
---drop table if exists storage;--$$--;
+--$$--drop table if exists storage;
 create table if not exists storage (
    id          bigserial,
    url         text,
@@ -13,25 +13,6 @@ alter table storage add constraint pk__storage__id primary key (id);
 create unique index if not exists ux__storage__short_url on storage(short_url);
 --$$--
 create unique index if not exists ux__storage__url on storage(url);
---$$--
-drop function if exists fn__load_from_file_storage;
---$$--
-create or replace function fn__load_from_file_storage(fs_data jsonb) returns void as $$
-declare
-    fs_key  text    = 'POSTStorage';
-begin
-    with data as (
-        select fs_data -> fs_key as json
-    ), keys as (
-        select jsonb_object_keys(data.json) f_url, data.json from data)
-    insert into storage (url, short_url, rand)
-    select f_url, (json -> f_url ->> 0), (json -> f_url ->> 1) from keys
-    on conflict (short_url) do nothing;
-    return;
-end
-$$ language plpgsql;
---$$--
-grant execute on function fn__load_from_file_storage(jsonb) to public;
 --$$--
 drop function if exists fn__gen_random_string;
 --$$--
@@ -86,52 +67,38 @@ $$ language plpgsql;
 --$$--
 grant execute on function fn__return_full_url(text) to public;
 --$$--
-drop function if exists fn__insert_short_url_v2;
+drop function if exists fn__insert_short_url_on_conflict;
 --$$--
-create or replace function fn__insert_short_url_v2(full_url text, prefix text default '') returns jsonb as $$
+create or replace function fn__insert_short_url_on_conflict(full_url text, prefix text default '') returns table (
+    data        text,
+    conflict    bool
+) as $$
 declare
-    max_len   int  = 16;
-    rnd_seed  text = fn__gen_random_string(max_len);
-    -- default http-code (http.StatusCreated)
-    http_code int  = 201;
+    max_len     int  = 16;
+    rnd_seed    text = fn__gen_random_string(max_len);
+    is_conflict bool;
 begin
-    if not exists(select short_url from storage where url = full_url) then
-        insert into storage (url, short_url, rand)
+    with cte as
+        (insert into storage (url, short_url, rand)
         select full_url, encode(sha256((full_url || rnd_seed)::bytea), 'hex'), rnd_seed
-        on conflict (url) do nothing;
-        -- short-url already exists (http.StatusConflict)
-    else http_code = 409;
-    end if;
-    return (select to_jsonb(t.*) from (select prefix || short_url as short_url, http_code from storage where url = full_url)t);
+        on conflict (url) do nothing
+        returning *)
+    select not exists(select cte.* from cte) into is_conflict;
+    return query (select prefix || short_url, is_conflict from storage where url = full_url limit 1);
 end
 $$ language plpgsql;
 --$$--
-grant execute on function fn__insert_short_url_v2(text, text) to public;
+grant execute on function fn__insert_short_url_on_conflict(text, text) to public;
 --$$--
-drop function if exists fn__return_short_url_v2;
+drop function if exists fn__return_short_url_on_conflict;
 --$$--
-create or replace function fn__return_short_url_v2(full_url text, prefix text default '') returns jsonb as $$
+create or replace function fn__return_short_url_on_conflict(full_url text, prefix text default '') returns table (
+    data        text,
+    conflict    bool
+) as $$
 begin
-    return fn__insert_short_url_v2(full_url, prefix);
+    return query (select * from fn__insert_short_url_on_conflict(full_url, prefix));
 end
 $$ language plpgsql;
 --$$--
-grant execute on function fn__return_short_url_v2(text, text) to public;
---$$--
-drop function if exists fn__return_batch_short_urls;
---$$--
-create or replace function fn__return_batch_short_urls(batch jsonb, prefix text default '') returns jsonb as $$
-begin
-    return (
-            select to_jsonb(array_agg(t1.*))
-            from (select t.correlation_id, prefix || fn__return_short_url(t.original_url) as short_url
-                  from  jsonb_to_recordset(batch)
-                   as t(
-                       "correlation_id" text,
-                       "original_url" text
-                       ))t1
-           );
-end
-$$ language plpgsql;
---$$--
-grant execute on function fn__return_batch_short_urls(jsonb, text) to public;
+grant execute on function fn__return_short_url_on_conflict(text, text) to public;

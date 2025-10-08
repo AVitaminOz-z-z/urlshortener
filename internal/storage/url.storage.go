@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/common"
 	m "github.com/AVitaminOz-z-z/urlshortener.git/internal/model"
 	"net/http"
@@ -25,12 +26,20 @@ type URLStorage struct {
 func (us *URLStorage) ReturnShortURL(ctx context.Context, url string) (*m.APIShorURL, error) {
 	prefix := us.BaseURL + "/"
 	if us.UseDBEngine {
-		b := us.returnPgDBShortURL(ctx, url, prefix)
-		apiSU, err := us.byteAToAPIShorURL(b)
+		httpCode := http.StatusCreated
+		// handle PgDBStorage Errors
+		short, err := us.returnPgDBShortURL(ctx, url, prefix)
 		if err != nil {
-			return nil, err
+			if !errors.Is(err, common.ErrStatusConflict) {
+				return nil, err
+			} else {
+				httpCode = http.StatusConflict
+			}
 		}
-		return apiSU, nil
+		return &m.APIShorURL{
+			HTTPCode: httpCode,
+			ShortURL: short,
+		}, nil
 	}
 	return us.returnFileStorageShortURL(url, prefix), nil
 }
@@ -42,7 +51,10 @@ func (us *URLStorage) ReturnBatchShortURL(ctx context.Context, batch m.APIBatchR
 		if err != nil {
 			return nil, err
 		}
-		respBytes := us.returnPgDBBatchShortURLs(ctx, batchBytes, prefix)
+		respBytes, err := us.returnPgDBBatchShortURLs(ctx, batchBytes, prefix)
+		if err != nil {
+			return nil, err
+		}
 		batchResponse := m.APIBatchResponseA{}
 		err = json.Unmarshal(respBytes, &batchResponse)
 		if err != nil {
@@ -83,18 +95,18 @@ func (us *URLStorage) returnFileStorageBatchShortURLs(batch m.APIBatchRequestA, 
 	return batchShorURLs, nil
 }
 
-func (us *URLStorage) ReturnFullURL(ctx context.Context, short string) string {
+func (us *URLStorage) ReturnFullURL(ctx context.Context, short string) (string, error) {
 	if us.UseDBEngine {
 		return us.returnPgDBFullURL(ctx, short)
 	}
 	return us.returnFileStorageFullURL(short)
 }
 
-func (us *URLStorage) returnFileStorageFullURL(short string) string {
+func (us *URLStorage) returnFileStorageFullURL(short string) (string, error) {
 	if val, ok := us.Storage.GETStorage[short]; !ok {
-		return ""
+		return "", nil
 	} else {
-		return val[0]
+		return val[0], nil
 	}
 }
 

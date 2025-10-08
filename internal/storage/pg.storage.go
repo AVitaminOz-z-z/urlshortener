@@ -3,14 +3,33 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/common"
-	m "github.com/AVitaminOz-z-z/urlshortener.git/internal/model"
 	_ "github.com/lib/pq"
 	"os"
 	"strings"
 	"time"
 )
+
+/*
+func (us *URLStorage) byteAToAPIShorURL(b []byte) (*m.APIShorURL, error) {
+	apiSU := &m.APIShorURL{}
+	err := json.Unmarshal(b, apiSU)
+	if err != nil {
+		return nil, err
+	}
+	return apiSU, nil
+}
+
+func (us *URLStorage) returnPgDBShortURLOld(ctx context.Context, url string, prefix string) ([]byte, error) {
+	db := us.getPgDB()
+	row := db.QueryRowContext(ctx, "select fn__return_short_url_v2($1, $2);", url, prefix)
+	short := new([]byte)
+	if err := row.Scan(short); err != nil {
+		return nil, err
+	}
+	return *short, nil
+}
+*/
 
 type PgDB struct {
 	*sql.DB
@@ -29,15 +48,6 @@ func NewPgDB(dbType, connStr string) (*PgDB, error) {
 
 func (pdb *PgDB) Ping() error {
 	return pdb.DB.Ping()
-}
-
-func (us *URLStorage) byteAToAPIShorURL(b []byte) (*m.APIShorURL, error) {
-	apiSU := &m.APIShorURL{}
-	err := json.Unmarshal(b, apiSU)
-	if err != nil {
-		return nil, err
-	}
-	return apiSU, nil
 }
 
 func (us *URLStorage) getPgDB() *PgDB {
@@ -92,33 +102,39 @@ func (us *URLStorage) SetPgDB(ctx context.Context, dsn string) error {
 	return nil
 }
 
-func (us *URLStorage) returnPgDBShortURL(ctx context.Context, url string, prefix string) []byte {
+func (us *URLStorage) returnPgDBShortURL(ctx context.Context, url string, prefix string) (string, error) {
 	db := us.getPgDB()
-	row := db.QueryRowContext(ctx, "select fn__return_short_url_v2($1, $2);", url, prefix)
-	short := new([]byte)
-	if err := row.Scan(short); err != nil {
-		panic(err)
+	row := db.QueryRowContext(ctx, "select * from fn__return_short_url_on_conflict($1, $2);", url, prefix)
+	type Result struct {
+		data     string
+		conflict bool
 	}
-	return *short
-
+	result := &Result{}
+	if err := row.Scan(&result.data, &result.conflict); err != nil {
+		return "", err
+	}
+	if result.conflict {
+		return result.data, common.ErrStatusConflict
+	}
+	return result.data, nil
 }
 
-func (us *URLStorage) returnPgDBBatchShortURLs(ctx context.Context, batch []byte, prefix string) []byte {
+func (us *URLStorage) returnPgDBBatchShortURLs(ctx context.Context, batch []byte, prefix string) ([]byte, error) {
 	db := us.getPgDB()
 	row := db.QueryRowContext(ctx, "select fn__return_batch_short_urls($1, $2);", batch, prefix)
 	batchShorts := new([]byte)
 	if err := row.Scan(batchShorts); err != nil {
-		panic(err)
+		return nil, err
 	}
-	return *batchShorts
+	return *batchShorts, nil
 }
 
-func (us *URLStorage) returnPgDBFullURL(ctx context.Context, short string) string {
+func (us *URLStorage) returnPgDBFullURL(ctx context.Context, short string) (string, error) {
 	db := us.getPgDB()
 	row := db.QueryRowContext(ctx, "select fn__return_full_url($1);", short)
 	url := new(string)
 	if err := row.Scan(url); err != nil {
-		panic(err)
+		return "", err
 	}
-	return *url
+	return *url, nil
 }

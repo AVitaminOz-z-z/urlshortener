@@ -13,6 +13,11 @@ func NewLogger(w io.Writer) *slog.Logger {
 	return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: slog.LevelInfo}))
 }
 
+func NewDiscardLogger() *slog.Logger {
+	//w = os.Stdout
+	return slog.New(slog.DiscardHandler)
+}
+
 func NewMiddlewareLogger(log *slog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		// handler function

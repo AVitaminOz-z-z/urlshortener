@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"github.com/AVitaminOz-z-z/urlshortener.git/internal/logger"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/storage"
 	"github.com/go-chi/chi/v5/middleware"
 	"io"
@@ -24,8 +25,9 @@ func TestCreateShortURL(t *testing.T) {
 	r.Header.Set("Content-Type", "text/plaint; charset=utf-8")
 
 	w := httptest.NewRecorder()
+	l := logger.NewDiscardLogger()
 
-	fn = CreateShortURL(NewDefHandlerConfig(us, nil))
+	fn = CreateShortURL(NewDefHandlerConfig(us, l))
 	fn(w, r)
 
 	res := w.Result()
@@ -66,8 +68,9 @@ func TestAPICreateShortURL(t *testing.T) {
 	r.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
+	l := logger.NewDiscardLogger()
 
-	fn = CreateShortURL(NewAPIHandlerConfig(us, nil))
+	fn = CreateShortURL(NewAPIHandlerConfig(us, l))
 	fn(w, r)
 
 	res := w.Result()
@@ -108,8 +111,9 @@ func TestAPICreateBatchShortURLs(t *testing.T) {
 	r.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
+	l := logger.NewDiscardLogger()
 
-	fn = CreateBatchShortURL(NewAPIHandlerConfig(us, nil))
+	fn = CreateBatchShortURL(NewAPIHandlerConfig(us, l))
 	fn(w, r)
 
 	res := w.Result()

@@ -64,14 +64,19 @@ func writeDefaultHeader(w http.ResponseWriter, hc *HandlerConfig) {
 	w.Header().Set("Content-Type", hc.ContentType)
 }
 
-func writeError(w http.ResponseWriter, hc *HandlerConfig, ext string, code int) {
-	writeDefaultHeader(w, hc)
-	if code >= 500 {
-		hc.GetLogger().Error(http.StatusText(code), slog.String("Message", ext))
-	} else {
-		hc.GetLogger().Warn(http.StatusText(code), slog.String("Message", ext))
+func writeLog(hc *HandlerConfig, code int, message string) {
+	switch {
+	case code >= 500:
+		hc.GetLogger().Error(http.StatusText(code), slog.String("Message", message))
+	case code >= 400 && code < 500:
+		hc.GetLogger().Warn(http.StatusText(code), slog.String("Message", message))
 	}
-	http.Error(w, fmt.Sprintf("%s (%s)", http.StatusText(code), ext), code)
+}
+
+func writeError(w http.ResponseWriter, hc *HandlerConfig, message string, code int) {
+	writeDefaultHeader(w, hc)
+	writeLog(hc, code, message)
+	http.Error(w, fmt.Sprintf("%s (%s)", http.StatusText(code), message), code)
 }
 
 func writeOK(w http.ResponseWriter, hc *HandlerConfig) {
@@ -82,6 +87,7 @@ func writeOK(w http.ResponseWriter, hc *HandlerConfig) {
 
 func writeShortURL(w http.ResponseWriter, hc *HandlerConfig, APIShortURL *m.APIShorURL) {
 	writeDefaultHeader(w, hc)
+	writeLog(hc, APIShortURL.HTTPCode, http.StatusText(APIShortURL.HTTPCode))
 	w.WriteHeader(APIShortURL.HTTPCode)
 	// make & write result
 	if hc.ContentType != common.APIContentType {
@@ -178,7 +184,11 @@ func RedirectToFullURL(hc *HandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//id := chi.URLParam(r, "id")
 		id := r.URL.Path[1:]
-		redirectURL := hc.GetStorage().ReturnFullURL(r.Context(), id)
+		redirectURL, err := hc.GetStorage().ReturnFullURL(r.Context(), id)
+		if err != nil {
+			writeError(w, hc, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		if redirectURL == "" {
 			writeError(w, hc, fmt.Sprintf("unmanaged short url by {id} = %s", id), http.StatusBadRequest)
 			return
