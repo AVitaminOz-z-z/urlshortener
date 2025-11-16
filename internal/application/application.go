@@ -57,7 +57,7 @@ func (a *AppServer) setLogger(w io.Writer) {
 }
 
 func (a *AppServer) setRouter() {
-	a.AppRouter = router.NewURLRouter(a.getURLStorage(), a.GetLogger())
+	a.AppRouter = router.NewURLRouter(a.getURLStorage(), a.GetLogger(), a.getSrvKey())
 }
 
 func (a *AppServer) getRouter() chi.Router {
@@ -94,6 +94,10 @@ func (a *AppServer) SaveURLStorage() error {
 
 func (a *AppServer) getAppEnv() *config.AppEnv {
 	return a.AppEnv
+}
+
+func (a *AppServer) getSrvKey() []byte {
+	return a.AppEnv.SrvKey()
 }
 
 func (a *AppServer) getOSArgs(env *config.AppEnv) *config.AppArgs {

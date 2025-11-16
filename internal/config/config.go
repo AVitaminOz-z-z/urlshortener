@@ -11,6 +11,7 @@ const (
 	defSrvAddress  = "localhost:8080"
 	defBaseURL     = "http://localhost:8080"
 	defPgDSN       = "postgres://user:pass@localhost:5432/dbname?sslmode=disable"
+	defSrvKeyMsg   = "37Eq93iXuIKDqSGd"
 )
 
 type AppArgs struct {
@@ -20,6 +21,7 @@ type AppArgs struct {
 	BaseURL     string
 	StorageName string
 	PgDSN       string
+	SrvKeyMsg   string
 }
 
 type AppEnv struct {
@@ -35,8 +37,13 @@ func newDefAppEnv() *AppEnv {
 			defSrvAddress,
 			defStorageName,
 			defPgDSN,
+			defSrvKeyMsg,
 		},
 	}
+}
+
+func (env *AppEnv) SrvKey() []byte {
+	return []byte(env.SrvKeyMsg)
 }
 
 func (env *AppEnv) LoadEnv(envFile string) error {
@@ -47,6 +54,8 @@ func (env *AppEnv) LoadEnv(envFile string) error {
 	env.SrvAddress = loadEnv("SERVER_ADDRESS")
 	env.BaseURL = loadEnv("BASE_URL")
 	env.PgDSN = loadEnv("DATABASE_DSN")
+	env.PgDSN = loadEnv("DATABASE_DSN")
+	env.SrvKeyMsg = loadEnv("SRV_KEY")
 	return nil
 }
 
@@ -81,6 +90,11 @@ func loadEnv(key string) string {
 		case "DATABASE_DSN":
 			{
 				lParam = defPgDSN
+				break
+			}
+		case "SRV_KEY":
+			{
+				lParam = defSrvKeyMsg
 				break
 			}
 		}

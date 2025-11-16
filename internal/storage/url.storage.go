@@ -1,18 +1,23 @@
 package storage
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/AVitaminOz-z-z/urlshortener.git/internal/common"
 	m "github.com/AVitaminOz-z-z/urlshortener.git/internal/model"
 	"net/http"
 	"os"
 )
 
+type Index string
+
 type Storage struct {
-	POSTStorage map[string][]string `json:"POSTStorage,omitempty"`
-	GETStorage  map[string][]string `json:"GETStorage,omitempty"`
+	POSTStorage map[Index][]string `json:"POSTStorage,omitempty"`
+	GETStorage  map[Index][]string `json:"GETStorage,omitempty"`
 }
 
 type URLStorage struct {
@@ -41,7 +46,26 @@ func (us *URLStorage) ReturnShortURL(ctx context.Context, url string) (*m.APISho
 			ShortURL: short,
 		}, nil
 	}
-	return us.returnFileStorageShortURL(url, prefix), nil
+	return us.returnFileStorageShortURL(ctx, url, prefix), nil
+}
+
+func (us *URLStorage) ReturnFullURL(ctx context.Context, short string) (string, error) {
+	if us.UseDBEngine {
+		return us.returnPgDBFullURL(ctx, short)
+	}
+	return us.returnFileStorageFullURL(ctx, short)
+}
+
+func (us *URLStorage) ReturnUserURLs(ctx context.Context) ([]byte, error) {
+	prefix := us.BaseURL + "/"
+	if us.UseDBEngine {
+		respBytes, err := us.returnPgDBUSerURLs(ctx, prefix)
+		if err != nil {
+			return nil, err
+		}
+		return respBytes, nil
+	}
+	return nil, common.ErrStatusNoContent
 }
 
 func (us *URLStorage) ReturnBatchShortURL(ctx context.Context, batch m.APIBatchRequestA) (*m.APIBatchShorURLs, error) {
@@ -65,22 +89,30 @@ func (us *URLStorage) ReturnBatchShortURL(ctx context.Context, batch m.APIBatchR
 			APIBatchResponseA: batchResponse,
 		}, nil
 	}
-	return us.returnFileStorageBatchShortURLs(batch, prefix)
+	return us.returnFileStorageBatchShortURLs(ctx, batch, prefix)
 }
 
-func (us *URLStorage) returnFileStorageURL(url string, prefix string) (string, bool) {
-	if val, ok := us.Storage.POSTStorage[url]; !ok {
+func (us *URLStorage) returnFileStorageURL(ctx context.Context, url string, prefix string) (string, bool) {
+	/*var userKey string
+	i := common.GetContextUserValue(common.CtxKeyName, common.CookieUserKeyName, ctx)
+	if i != nil {
+		if t, ok := i.(string); ok {
+			userKey = t
+		}
+	}*/
+	//userKey := common.GetContextCookieUserKey(ctx)
+	if val, ok := us.Storage.POSTStorage[Index(url)]; !ok {
 		rs := us.randomString()
 		sha256 := us.sha256Sum(url + rs)
-		us.Storage.POSTStorage[url] = []string{sha256, rs}
-		us.Storage.GETStorage[sha256] = []string{url, rs}
+		us.Storage.POSTStorage[Index(url)] = []string{sha256, rs}
+		us.Storage.GETStorage[Index(sha256)] = []string{url, rs}
 		return prefix + sha256, ok
 	} else {
 		return prefix + val[0], ok
 	}
 }
 
-func (us *URLStorage) returnFileStorageBatchShortURLs(batch m.APIBatchRequestA, prefix string) (*m.APIBatchShorURLs, error) {
+func (us *URLStorage) returnFileStorageBatchShortURLs(ctx context.Context, batch m.APIBatchRequestA, prefix string) (*m.APIBatchShorURLs, error) {
 	batchResponseA := make(m.APIBatchResponseA, len(batch))
 	batchShorURLs := &m.APIBatchShorURLs{
 		HTTPCode:          http.StatusCreated,
@@ -88,30 +120,31 @@ func (us *URLStorage) returnFileStorageBatchShortURLs(batch m.APIBatchRequestA, 
 	}
 	for i, v := range batch {
 		batchResponseA[i].CorrelationID = v.CorrelationID
-		sURL, _ := us.returnFileStorageURL(v.OriginalURL, prefix)
+		sURL, _ := us.returnFileStorageURL(ctx, v.OriginalURL, prefix)
 		batchResponseA[i].ShortURL = sURL
 
 	}
 	return batchShorURLs, nil
 }
 
-func (us *URLStorage) ReturnFullURL(ctx context.Context, short string) (string, error) {
-	if us.UseDBEngine {
-		return us.returnPgDBFullURL(ctx, short)
-	}
-	return us.returnFileStorageFullURL(short)
-}
-
-func (us *URLStorage) returnFileStorageFullURL(short string) (string, error) {
-	if val, ok := us.Storage.GETStorage[short]; !ok {
+func (us *URLStorage) returnFileStorageFullURL(ctx context.Context, short string) (string, error) {
+	/*var userKey string
+	i := common.GetContextUserValue(common.CtxKeyName, common.CookieUserKeyName, ctx)
+	if i != nil {
+		if t, ok := i.(string); ok {
+			userKey = t
+		}
+	}*/
+	//userKey := common.GetContextCookieUserKey(ctx)
+	if val, ok := us.Storage.GETStorage[Index(short)]; !ok {
 		return "", nil
 	} else {
 		return val[0], nil
 	}
 }
 
-func (us *URLStorage) returnFileStorageShortURL(url string, prefix string) *m.APIShorURL {
-	short, exists := us.returnFileStorageURL(url, prefix)
+func (us *URLStorage) returnFileStorageShortURL(ctx context.Context, url string, prefix string) *m.APIShorURL {
+	short, exists := us.returnFileStorageURL(ctx, url, prefix)
 	httpCode := http.StatusCreated
 	if exists {
 		httpCode = http.StatusConflict
@@ -123,23 +156,37 @@ func (us *URLStorage) returnFileStorageShortURL(url string, prefix string) *m.AP
 }
 
 func (us *URLStorage) fileStorageToByteA() ([]byte, error) {
-	if b, err := json.Marshal(us.Storage); err != nil {
+	// version 1
+	/*
+		if b, err := json.Marshal(us.Storage); err != nil {
+			return nil, err
+		} else {
+			return b, nil
+		}
+	*/
+	//  version 2
+	buf := new(bytes.Buffer)
+	enc := gob.NewEncoder(buf)
+	if err := enc.Encode(us.Storage); err != nil {
 		return nil, err
 	} else {
-		return b, nil
+		return buf.Bytes(), nil
 	}
 }
 
 func (us *URLStorage) SaveStorage(storageName string) error {
 	if !us.UseDBEngine {
 		if err := us.prepareStorageFile(storageName); err != nil {
+			fmt.Println(err, 1)
 			return err
 		}
 		sData, err := us.fileStorageToByteA()
 		if err != nil {
+			fmt.Println(err, 2)
 			return err
 		}
 		if err = os.WriteFile(storageName, sData, os.FileMode(0644)); err != nil {
+			fmt.Println(err, 3)
 			return err
 		}
 		return nil
@@ -183,7 +230,17 @@ func (us *URLStorage) loadFileStorage(storageName string) error {
 		return err
 	}
 	if len(fBytes) != 0 {
-		err = json.Unmarshal(fBytes, &us.Storage)
+		//  version 1
+		/*
+			err = json.Unmarshal(fBytes, &us.Storage)
+			if err != nil {
+				return err
+			}
+		*/
+		//  version 2
+		buf := bytes.NewBuffer(fBytes)
+		dec := gob.NewDecoder(buf)
+		err = dec.Decode(&us.Storage)
 		if err != nil {
 			return err
 		}
@@ -200,9 +257,10 @@ func (us *URLStorage) randomString() string {
 }
 
 func NewURLFileStorage(storageName string) (*URLStorage, error) {
+	fMake := make(map[Index][]string)
 	us := &URLStorage{
 		StorageName: storageName,
-		Storage:     Storage{POSTStorage: make(map[string][]string), GETStorage: make(map[string][]string)},
+		Storage:     Storage{POSTStorage: fMake, GETStorage: fMake},
 	}
 	err := us.loadFileStorage(storageName)
 	return us, err

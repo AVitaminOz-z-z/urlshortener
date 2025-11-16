@@ -87,7 +87,7 @@ func writeOK(w http.ResponseWriter, hc *HandlerConfig) {
 
 func writeShortURL(w http.ResponseWriter, hc *HandlerConfig, APIShortURL *m.APIShorURL) {
 	writeDefaultHeader(w, hc)
-	writeLog(hc, APIShortURL.HTTPCode, http.StatusText(APIShortURL.HTTPCode))
+	//writeLog(hc, APIShortURL.HTTPCode, http.StatusText(APIShortURL.HTTPCode))
 	w.WriteHeader(APIShortURL.HTTPCode)
 	// make & write result
 	if hc.ContentType != common.APIContentType {
@@ -114,6 +114,37 @@ func writeFullURL(w http.ResponseWriter, hc *HandlerConfig, fullURL string) {
 	w.Header().Set("Location", fullURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 	_, _ = w.Write(nil)
+}
+
+func writeUserURLs(w http.ResponseWriter, hc *HandlerConfig, userURLs []byte) {
+	writeDefaultHeader(w, hc)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(userURLs)
+}
+
+func ReturnUserURLs(hc *HandlerConfig) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// check cookie error
+		/*if err := common.GetContextCookieUserErr(r.Context()); err != nil {
+			if err != common.ErrCookieIsOk {
+				writeError(w, hc, err.Error(), http.StatusUnauthorized)
+				return
+			}
+		}*/
+		// finding and send user urls
+		us := hc.GetStorage()
+		userURLs, err := us.ReturnUserURLs(r.Context())
+		// check error
+		if err != nil {
+			if err == common.ErrStatusNoContent {
+				writeError(w, hc, err.Error(), http.StatusNoContent)
+			} else {
+				writeError(w, hc, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
+		writeUserURLs(w, hc, userURLs)
+	}
 }
 
 func CreateBatchShortURL(hc *HandlerConfig) http.HandlerFunc {

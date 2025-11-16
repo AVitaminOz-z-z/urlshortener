@@ -104,7 +104,8 @@ func (us *URLStorage) SetPgDB(ctx context.Context, dsn string) error {
 
 func (us *URLStorage) returnPgDBShortURL(ctx context.Context, url string, prefix string) (string, error) {
 	db := us.getPgDB()
-	row := db.QueryRowContext(ctx, "select * from fn__return_short_url_on_conflict($1, $2);", url, prefix)
+	userKey := common.GetContextCookieUserKey(ctx)
+	row := db.QueryRowContext(ctx, "select * from fn__return_short_url_on_conflict($1, $2, $3);", url, userKey, prefix)
 	type Result struct {
 		data     string
 		conflict bool
@@ -121,7 +122,8 @@ func (us *URLStorage) returnPgDBShortURL(ctx context.Context, url string, prefix
 
 func (us *URLStorage) returnPgDBBatchShortURLs(ctx context.Context, batch []byte, prefix string) ([]byte, error) {
 	db := us.getPgDB()
-	row := db.QueryRowContext(ctx, "select fn__return_batch_short_urls($1, $2);", batch, prefix)
+	userKey := common.GetContextCookieUserKey(ctx)
+	row := db.QueryRowContext(ctx, "select fn__return_batch_short_urls($1, $2, $3);", batch, userKey, prefix)
 	batchShorts := new([]byte)
 	if err := row.Scan(batchShorts); err != nil {
 		return nil, err
@@ -131,10 +133,29 @@ func (us *URLStorage) returnPgDBBatchShortURLs(ctx context.Context, batch []byte
 
 func (us *URLStorage) returnPgDBFullURL(ctx context.Context, short string) (string, error) {
 	db := us.getPgDB()
-	row := db.QueryRowContext(ctx, "select fn__return_full_url($1);", short)
+	userKey := common.GetContextCookieUserKey(ctx)
+	row := db.QueryRowContext(ctx, "select fn__return_full_url($1, $2);", short, userKey)
 	url := new(string)
 	if err := row.Scan(url); err != nil {
 		return "", err
 	}
 	return *url, nil
+}
+
+func (us *URLStorage) returnPgDBUSerURLs(ctx context.Context, prefix string) ([]byte, error) {
+	db := us.getPgDB()
+	userKey := common.GetContextCookieUserKey(ctx)
+	row := db.QueryRowContext(ctx, "select * from fn__return_user_urls($1, $2);", userKey, prefix)
+	type Result struct {
+		data    []byte
+		isEmpty bool
+	}
+	result := &Result{}
+	if err := row.Scan(&result.data, &result.isEmpty); err != nil {
+		return nil, err
+	}
+	if result.isEmpty {
+		return result.data, common.ErrStatusNoContent
+	}
+	return result.data, nil
 }

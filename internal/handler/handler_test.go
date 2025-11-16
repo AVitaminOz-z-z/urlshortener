@@ -11,9 +11,20 @@ import (
 	"testing"
 )
 
+/*
+https://google.com
+http://localhost:8080/cf41b6052ebb502e1ca4d72544333018475c73d740c8f74d027e1f1256e3c7be
+
+https://yandex.ru
+http://localhost:8080/7f6845db5740b940d7bcb2bd8f52f3b34501544416f499a5c27c55ae11ab0336
+
+https://github.com
+http://localhost:8080/82d9082ba2edaab19779147cd25ffe1e1483a498571e98b0d89eb44847baddf4
+*/
+
 func TestCreateShortURL(t *testing.T) {
 	const (
-		WantShortURL = "http://localhost:8080/746b8a4841e54de93f485104e6f0020b5c4c38f0e03845ff5578ef835ea8ddcc"
+		WantShortURL = "http://localhost:8080/7f6845db5740b940d7bcb2bd8f52f3b34501544416f499a5c27c55ae11ab0336"
 		TestURL      = "https://yandex.ru"
 	)
 
@@ -56,7 +67,7 @@ func TestCreateShortURL(t *testing.T) {
 
 func TestAPICreateShortURL(t *testing.T) {
 	const (
-		WantShortURL = "{\"result\":\"http://localhost:8080/746b8a4841e54de93f485104e6f0020b5c4c38f0e03845ff5578ef835ea8ddcc\"}\x0a"
+		WantShortURL = "{\"result\":\"http://localhost:8080/7f6845db5740b940d7bcb2bd8f52f3b34501544416f499a5c27c55ae11ab0336\"}\x0a"
 		TestURL      = "{\"url\":\"https://yandex.ru\"}"
 	)
 
@@ -99,7 +110,7 @@ func TestAPICreateShortURL(t *testing.T) {
 
 func TestAPICreateBatchShortURLs(t *testing.T) {
 	const (
-		WantShortURL = "[{\"correlation_id\":\"cc0aa201-a5f9-40ea-8e74-b92273f337b5\",\"short_url\":\"http://localhost:8080/249110f758ff4d188b124b94787b758a93539865f89609bfdf681fea588b6fba\"},{\"correlation_id\":\"996b268f-2763-4d1e-b73a-5d66e6a2e3bc\",\"short_url\":\"http://localhost:8080/aebf6688de772690fe9e3f3839a2063833da43f31dbe3d6b677a16dd943a67b0\"}]\x0a"
+		WantShortURL = "[{\"correlation_id\":\"cc0aa201-a5f9-40ea-8e74-b92273f337b5\",\"short_url\":\"http://localhost:8080/82d9082ba2edaab19779147cd25ffe1e1483a498571e98b0d89eb44847baddf4\"},{\"correlation_id\":\"996b268f-2763-4d1e-b73a-5d66e6a2e3bc\",\"short_url\":\"http://localhost:8080/cf41b6052ebb502e1ca4d72544333018475c73d740c8f74d027e1f1256e3c7be\"}]\x0a"
 		TestURL      = "[{\"correlation_id\":\"cc0aa201-a5f9-40ea-8e74-b92273f337b5\",\"original_url\":\"https://github.com\"},{\"correlation_id\":\"996b268f-2763-4d1e-b73a-5d66e6a2e3bc\",\"original_url\":\"https://google.com\"}]"
 	)
 
@@ -143,7 +154,7 @@ func TestAPICreateBatchShortURLs(t *testing.T) {
 func TestRedirectToFullURL(t *testing.T) {
 	const (
 		WantLocation = "https://github.com"
-		TargetPath   = "/249110f758ff4d188b124b94787b758a93539865f89609bfdf681fea588b6fba"
+		TargetPath   = "/82d9082ba2edaab19779147cd25ffe1e1483a498571e98b0d89eb44847baddf4"
 	)
 
 	us, _ := storage.NewURLFileStorage("./.test_storage")
